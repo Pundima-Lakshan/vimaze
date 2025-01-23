@@ -3,6 +3,7 @@ import logging
 import customtkinter as ctk
 
 from vimaze.configs import solver_app_options
+from vimaze.maze import Maze
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -22,6 +23,9 @@ class SolverApp:
 
         for index, col in enumerate(solver_app_options['grid_config']['cols']):
             self.root.grid_columnconfigure(index, weight=col['weight'], minsize=col['minsize'])
+
+        self.maze_rows_str = ctk.StringVar()
+        self.maze_cols_str = ctk.StringVar()
 
         for frame_name, frame_config in solver_app_options['frames'].items():
             frame = ctk.CTkFrame(self.root, corner_radius=frame_config['corner_radius'],
@@ -47,10 +51,15 @@ class SolverApp:
                                    height=canvas_config['height'])
             canvas.pack(fill=canvas_config['pack_config']['fill'], expand=canvas_config['pack_config']['expand'])
 
+            if canvas_name == "maze_canvas":
+                self.maze_canvas = canvas
+
         self.root.bind("<Configure>", self.on_resize)
 
+        self.maze = Maze(self.maze_canvas)
+
     def on_resize(self, event):
-        logging.debug("Resizing SolverApp")
+        # logging.debug(f"Resizing SolverApp {event}")
 
         window_width = self.root.winfo_width()
         window_height = self.root.winfo_height()
@@ -67,7 +76,8 @@ class SolverApp:
         if not self.controls_frame:
             return
 
-        container = ctk.CTkFrame(self.controls_frame, fg_color="green", width=solver_app_options['frames']['controls_frame']['width'],)
+        container = ctk.CTkFrame(self.controls_frame, fg_color="green",
+                                 width=solver_app_options['frames']['controls_frame']['width'], )
         container.pack(expand=True, fill="y", pady=20)  # Add some padding at the top and bottom
         container.pack_propagate(False)
 
@@ -114,24 +124,47 @@ class SolverApp:
         label = ctk.CTkLabel(parent, text=config.get('label', 'Input'))
         label.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
-        input_field = ctk.CTkEntry(parent)
+        text_variable = ctk.StringVar()
+        if config['key'] == 'maze_rows':
+            text_variable = self.maze_rows_str
+        elif config['key'] == 'maze_cols':
+            text_variable = self.maze_cols_str
+
+        input_field = ctk.CTkEntry(parent, textvariable=text_variable)
         input_field.insert(0, config.get('default_value', ''))
         input_field.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
     def add_dropdown(self, parent, config):
-        """Add a dropdown menu to the parent frame."""
+        """Add a dropdown menu to the parent frame with label-value pairs."""
+        # Add a label for the dropdown
         label = ctk.CTkLabel(parent, text=config.get('label', 'Dropdown'))
         label.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
-        dropdown = ctk.CTkOptionMenu(parent, values=config.get('values', []),
-                                     command=lambda value: self.handle_dropdown_change(config.get('command'), value))
-        dropdown.set(config.get('default_value', ''))
-        dropdown.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
+        # Extract labels and values from the configuration
+        options = config.get('options', [])
+        labels = [option['label'] for option in options]  # List of display labels
+        values = {option['label']: option['value'] for option in options}  # Map labels to values
+
+        # Create the dropdown with display labels
+        dropdown = ctk.CTkOptionMenu(parent, values=labels,
+                                     command=lambda label_value: self.handle_dropdown_change(
+                                         config.get('command'), values[label_value]  # Pass the corresponding value
+                                     ))
+
+        # Set the default value (find the label corresponding to the default value)
+        default_value = config.get('default_value', '')
+        default_label = next((option['label'] for option in options if option['value'] == default_value), '')
+        dropdown.set(default_label)
+
+    # Common button handlers
 
     def handle_button_click(self, command):
         """Handle button click events."""
         logging.debug(f"Button clicked: {command}")
         # Add your logic here based on the command
+
+        if command == "gen_display_algo_maze":
+            self.gen_display_algo_maze()
 
     def handle_slider_change(self, command, value):
         """Handle slider value changes."""
@@ -142,6 +175,25 @@ class SolverApp:
         """Handle dropdown value changes."""
         logging.debug(f"Dropdown changed: {command} = {value}")
         # Add your logic here based on the command
+
+        if command == "set_maze_gen_algorithm":
+            self.set_maze_gen_algorithm(value)
+
+    # Handler functions for the controls
+
+    def set_maze_gen_algorithm(self, value):
+        logging.debug(f"Setting maze generation algorithm to: {value}")
+        # Add your logic here
+
+        self.maze.set_maze_gen_algorithm(value)
+
+    def gen_display_algo_maze(self):
+        logging.debug(f"Generating maze: {int(self.maze_rows_str.get()), int(self.maze_cols_str.get())}")
+        # Add your logic here
+
+        self.maze.gen_algo_maze(int(self.maze_rows_str.get()), int(self.maze_cols_str.get()))
+        self.maze_canvas.delete("all")
+        self.maze.display_maze()
 
     def run(self):
         logging.debug("Running SolverApp")

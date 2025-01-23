@@ -1,27 +1,26 @@
+from customtkinter import CTkCanvas
+
+from vimaze.maze_display import MazeDisplay
 from vimaze.maze_generator import MazeGenerator
 
 
 class Maze:
-    def __init__(self, master, maze_frame):
-        self.master = master
-        self.maze_frame = maze_frame
-        self.maze = None
-        self.controls = None
-        self.speed = 5
-        self.theme = "System"
-        self.algorithm = "A*"
-        self.generate_maze()
+    def __init__(self, maze_canvas: CTkCanvas):
+        self.maze_canvas = maze_canvas
+        self.graph = None
+        self.gen_algorithm = None
+        self.cols = None
+        self.rows = None
 
-    def generate_maze(self):
-        self.maze = MazeGenerator(30, 30)
-        self.maze.generate_maze()
-        self.maze.draw_maze(self.maze_frame)
+        self.displayer = MazeDisplay(self)
 
-    def set_speed(self, value):
-        self.speed = value
+    def gen_algo_maze(self, rows, cols):
+        self.rows = rows
+        self.cols = cols
+        self.graph = MazeGenerator.generate_maze(rows, cols, self.gen_algorithm)
 
-    def set_theme(self, value):
-        self.theme = value
+    def set_maze_gen_algorithm(self, value):
+        self.gen_algorithm = value
 
-    def set_algorithm(self, value):
-        self.algorithm = value
+    def display_maze(self):
+        self.displayer.display_maze(self.maze_canvas)

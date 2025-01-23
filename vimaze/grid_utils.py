@@ -11,11 +11,3 @@ def create_grid(rows, cols):
             graph.add_node(node)
 
     return graph
-
-
-def get_cell_value(row, col):
-    return f"{row},{col}"
-
-
-def get_row_col_from_value(value):
-    return map(int, value.split(","))

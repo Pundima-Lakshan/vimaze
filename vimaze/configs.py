@@ -1,3 +1,34 @@
+maze_generation_options = {
+    'defaults': {
+        'rows': 10,
+        'cols': 10,
+    },
+    'algorithms': {
+        'prim': {
+            'name': 'Prim\'s',
+        },
+        'binary': {
+            'name': 'Binary',
+        },
+        'kruskal': {
+            'name': 'Kruskal',
+        },
+        'rec_backtrack': {
+            'name': 'Recursive Backtracking',
+        },
+    }
+}
+
+maze_display_options = {
+    'speed': 5,
+    'cell_color': "white",
+    'cell_outline': "white smoke",
+    'wall_color': "blue",
+    'outline_width': 2,
+    'cell_size': 20,
+    'offset': 10,
+}
+
 solver_app_options = {
     'window': {
         'title': "Maze Solver",
@@ -41,24 +72,31 @@ solver_app_options = {
                         {
                             'type': 'dropdown',
                             'label': 'Algorithm',
-                            'values': ['Prim\'s', 'Binary', 'Kruskal', 'Recursive Backtracking'],
-                            'default_value': 'Kruskal',
-                            'command': 'set_maze_gen_algorithm',  # Callback function name
+                            'options': [
+                                {'label': maze_generation_options['algorithms']['prim']['name'], 'value': 'prim'},
+                                {'label': maze_generation_options['algorithms']['binary']['name'], 'value': 'binary'},
+                                {'label': maze_generation_options['algorithms']['kruskal']['name'], 'value': 'kruskal'},
+                                {'label': maze_generation_options['algorithms']['rec_backtrack']['name'],
+                                 'value': 'rec_backtrack'},
+                            ],
+                            'command': 'set_maze_gen_algorithm'
                         },
                         {
                             'type': 'input',
+                            'key': 'maze_rows',
                             'label': 'No of rows',
                             'default_value': 10,
                         },
                         {
                             'type': 'input',
+                            'key': 'maze_cols',
                             'label': 'No of columns',
                             'default_value': 10,
                         },
                         {
                             'type': 'button',
                             'text': 'Generate Maze',
-                            'command': 'generate_algo_maze',  # Callback function name
+                            'command': 'gen_display_algo_maze',  # Callback function name
                         },
                     ]
                 },

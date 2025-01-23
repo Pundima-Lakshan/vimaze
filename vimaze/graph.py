@@ -71,3 +71,12 @@ class Graph:
             if edge:
                 neighbors.append((direction, edge))
         return neighbors
+
+    @staticmethod
+    def get_cell_value(row, col):
+        return f"{row},{col}"
+
+    @staticmethod
+    def get_row_col_from_value(value):
+        return map(int, value.split(","))
+        
