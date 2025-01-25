@@ -12,7 +12,7 @@ class Maze:
         self.cols = None
         self.rows = None
 
-        self.displayer = MazeDisplay(self)
+        self.displayer = MazeDisplay()
 
     def gen_algo_maze(self, rows, cols):
         self.rows = rows
@@ -23,4 +23,4 @@ class Maze:
         self.gen_algorithm = value
 
     def display_maze(self):
-        self.displayer.display_maze(self.maze_canvas)
+        self.displayer.display_maze(self, self.maze_canvas)

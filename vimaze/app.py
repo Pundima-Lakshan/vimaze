@@ -65,11 +65,11 @@ class SolverApp:
         window_height = self.root.winfo_height()
 
         self.controls_frame.configure(
-            width=max(solver_app_options['frames']['controls_frame']['width'], int(window_width * 0.4)),
+            width=solver_app_options['frames']['controls_frame']['width'],
             height=max(solver_app_options['frames']['controls_frame']['height'], window_height))
 
         self.maze_frame.configure(
-            width=max(solver_app_options['frames']['maze_frame']['width'], int(window_width * 0.6)),
+            width=max(solver_app_options['frames']['maze_frame']['width'], int(window_width - solver_app_options['frames']['controls_frame']['width'])),
             height=max(solver_app_options['frames']['maze_frame']['height'], window_height))
 
     def add_tabs(self, tabs_config):
