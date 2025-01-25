@@ -69,7 +69,8 @@ class SolverApp:
             height=max(solver_app_options['frames']['controls_frame']['height'], window_height))
 
         self.maze_frame.configure(
-            width=max(solver_app_options['frames']['maze_frame']['width'], int(window_width - solver_app_options['frames']['controls_frame']['width'])),
+            width=max(solver_app_options['frames']['maze_frame']['width'],
+                      int(window_width - solver_app_options['frames']['controls_frame']['width'])),
             height=max(solver_app_options['frames']['maze_frame']['height'], window_height))
 
     def add_tabs(self, tabs_config):
@@ -135,26 +136,15 @@ class SolverApp:
         input_field.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
     def add_dropdown(self, parent, config):
-        """Add a dropdown menu to the parent frame with label-value pairs."""
+        """Add a dropdown menu to the parent frame."""
         # Add a label for the dropdown
         label = ctk.CTkLabel(parent, text=config.get('label', 'Dropdown'))
         label.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
-        # Extract labels and values from the configuration
-        options = config.get('options', [])
-        labels = [option['label'] for option in options]  # List of display labels
-        values = {option['label']: option['value'] for option in options}  # Map labels to values
-
-        # Create the dropdown with display labels
-        dropdown = ctk.CTkOptionMenu(parent, values=labels,
-                                     command=lambda label_value: self.handle_dropdown_change(
-                                         config.get('command'), values[label_value]  # Pass the corresponding value
-                                     ))
-
-        # Set the default value (find the label corresponding to the default value)
-        default_value = config.get('default_value', '')
-        default_label = next((option['label'] for option in options if option['value'] == default_value), '')
-        dropdown.set(default_label)
+        dropdown = ctk.CTkOptionMenu(parent, values=config.get('values', []),
+                                     command=lambda value: self.handle_dropdown_change(config.get('command'), value))
+        dropdown.set(config.get('default_value', ''))
+        dropdown.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
     # Common button handlers
 

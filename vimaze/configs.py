@@ -72,13 +72,8 @@ solver_app_options = {
                         {
                             'type': 'dropdown',
                             'label': 'Algorithm',
-                            'options': [
-                                {'label': maze_generation_options['algorithms']['prim']['name'], 'value': 'prim'},
-                                {'label': maze_generation_options['algorithms']['binary']['name'], 'value': 'binary'},
-                                {'label': maze_generation_options['algorithms']['kruskal']['name'], 'value': 'kruskal'},
-                                {'label': maze_generation_options['algorithms']['rec_backtrack']['name'],
-                                 'value': 'rec_backtrack'},
-                            ],
+                            'values': ['Prim\'s', 'Binary', 'Kruskal', 'Recursive Backtracking'],
+                            'default_value': '',
                             'command': 'set_maze_gen_algorithm'
                         },
                         {
