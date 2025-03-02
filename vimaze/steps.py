@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 
 class Step:
-    def __init__(self, node: Node, action: str):
+    def __init__(self, node: 'Node', action: str):
         self.node = node
         self.action = action
 
