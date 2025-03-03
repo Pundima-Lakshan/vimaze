@@ -30,6 +30,7 @@ class Graph:
     def add_node(self, node_pos: tuple[int, int]):
         new_node = Node(node_pos)
         self.nodes[new_node.name] = new_node
+        self.node_count += 1
         
     def connect_nodes(self, node_u_pos: tuple[int, int], node_v_pos: tuple[int, int]):
         node_u_name = _get_node_name(node_u_pos)

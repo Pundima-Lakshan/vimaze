@@ -4,7 +4,7 @@ from customtkinter import CTkCanvas
 
 from vimaze.maze_animator import MazeAnimator
 from vimaze.maze_display import MazeDisplay
-from vimaze.maze_generator import MazeGenerator
+from vimaze.maze_graph_generator import MazeGraphGenerator
 from vimaze.maze_solver import MazeSolver
 
 if TYPE_CHECKING:
@@ -21,14 +21,14 @@ class Maze:
         self.rows: Optional[int] = None
 
         self.animator = MazeAnimator(self.maze_canvas)
-        self.generator = MazeGenerator(self.animator)
+        self.generator = MazeGraphGenerator(self.animator)
         self.displayer = MazeDisplay()
         self.solver = MazeSolver(self.graph, self.animator)
 
     def gen_algo_maze(self, rows: int, cols: int):
         self.rows = rows
         self.cols = cols
-        self.graph = self.generator.generate_maze(rows, cols, self.gen_algorithm)
+        self.graph = self.generator.generate_maze_graph(rows, cols, self.gen_algorithm)
 
     def set_maze_gen_algorithm(self, value: str):
         self.gen_algorithm = value

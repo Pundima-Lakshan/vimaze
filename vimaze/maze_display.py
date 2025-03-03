@@ -48,15 +48,15 @@ class MazeDisplay:
                                     fill=self.cell_color)
 
             # Draw walls (no edge = wall)
-            if row - 1 > 0 and not node.is_neighbour(maze.graph.get_node((row - 1, col))):
+            if row - 1 >= 0 and not node.is_neighbour(maze.graph.get_node((row - 1, col))):
                 canvas.create_line(x, y, x + self.cell_size, y, fill=self.wall_color,
                                    width=self.outline_width)  # North wall
-            if col - 1 > 0 and not node.is_neighbour(maze.graph.get_node((row, col - 1))):
+            if col - 1 >= 0 and not node.is_neighbour(maze.graph.get_node((row, col - 1))):
                 canvas.create_line(x, y, x, y + self.cell_size, fill=self.wall_color,
                                    width=self.outline_width)  # West wall
-            if row + 1 < maze.rows - 1 and not node.is_neighbour(maze.graph.get_node((row + 1, col))):
+            if row + 1 <= maze.rows - 1 and not node.is_neighbour(maze.graph.get_node((row + 1, col))):
                 canvas.create_line(x, y + self.cell_size, x + self.cell_size, y + self.cell_size, fill=self.wall_color,
                                    width=self.outline_width)  # South wall
-            if col + 1 < maze.cols - 1 and not node.is_neighbour(maze.graph.get_node((row, col + 1))):
+            if col + 1 <= maze.cols - 1 and not node.is_neighbour(maze.graph.get_node((row, col + 1))):
                 canvas.create_line(x + self.cell_size, y, x + self.cell_size, y + self.cell_size, fill=self.wall_color,
                                    width=self.outline_width)  # East wall
