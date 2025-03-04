@@ -36,8 +36,10 @@ class SolverApp:
         
         # Image processing variables
         self.image_path_str = ctk.StringVar()
+        self.processor_type_str = ctk.StringVar(value="Standard Processor")
         self.invert_binary_str = ctk.StringVar(value="false")
         self.wall_threshold_str = ctk.StringVar(value="127")
+        self.cell_size_str = ctk.StringVar(value="20")
         self.debug_mode = ctk.BooleanVar(value=False)
 
         for frame_name, frame_config in solver_app_options['frames'].items():
@@ -127,8 +129,6 @@ class SolverApp:
                 self.add_input(parent, control_config)
             elif control_type == 'dropdown':
                 self.add_dropdown(parent, control_config)
-            elif control_type == 'checkbox':
-                self.add_checkbox(parent, control_config)
 
     def add_button(self, parent, config):
         """Add a button to the parent frame."""
@@ -170,6 +170,8 @@ class SolverApp:
             text_variable = self.invert_binary_str
         elif config['key'] == 'wall_threshold':
             text_variable = self.wall_threshold_str
+        elif config['key'] == 'cell_size':
+            text_variable = self.cell_size_str
         else:
             text_variable = ctk.StringVar()
 
@@ -190,32 +192,6 @@ class SolverApp:
         dropdown.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
     # Common button handlers
-    
-    def add_checkbox(self, parent, config):
-        """Add a checkbox to the parent frame."""
-        checkbox_var = None
-        if config['key'] == 'debug_mode':
-            checkbox_var = self.debug_mode
-        else:
-            checkbox_var = ctk.BooleanVar(value=config.get('default_value', False))
-        
-        checkbox = ctk.CTkCheckBox(
-            parent, 
-            text=config.get('label', 'Checkbox'),
-            variable=checkbox_var,
-            command=lambda: self.handle_checkbox_toggle(config.get('command'))
-        )
-        checkbox.pack(pady=5, padx=10, fill="x")
-        
-        return checkbox
-
-    def handle_checkbox_toggle(self, command):
-        """Handle checkbox toggle events."""
-        logging.debug(f"Checkbox toggled: {command}")
-        
-        if command == 'toggle_debug_mode':
-            self.toggle_debug_mode()
-
     def handle_button_click(self, command):
         """Handle button click events."""
         logging.debug(f"Button clicked: {command}")
@@ -233,13 +209,10 @@ class SolverApp:
             self.select_maze_image()
         elif command == 'process_maze_image':
             self.process_maze_image()
-        elif command == 'toggle_debug_mode':
-            self.toggle_debug_mode()
         
     def handle_slider_change(self, command, value):
         """Handle slider value changes."""
         logging.debug(f"Slider changed: {command} = {value}")
-        # Add your logic here based on the command
 
     def handle_dropdown_change(self, command, value):
         """Handle dropdown value changes."""
@@ -250,6 +223,8 @@ class SolverApp:
             self.set_maze_gen_algorithm(value)
         elif command == "set_maze_solving_algorithm":
             self.set_maze_solving_algorithm(value)
+        elif command == "set_processor_type":
+            self.processor_type_str.set(value)
             
     def select_maze_image(self):
         """
@@ -284,21 +259,22 @@ class SolverApp:
             messagebox.showerror("Error", "Please select an image file first.")
             return
         
-        try:            
+        try:
+            # Get processor type
+            processor_type = "simple" if self.processor_type_str.get() == "Simple Processor" else "standard"
+               
             # Configure the maze image processor through the maze instance
             self.maze.init_from_image_with_params(
                 image_path, 
+                processor_type=processor_type,
                 invert_binary=(self.invert_binary_str.get().lower() == "true"),
                 wall_threshold=int(self.wall_threshold_str.get()) if self.wall_threshold_str.get().isdigit() else 127,
+                cell_size=int(self.cell_size_str.get()) if self.cell_size_str.get().isdigit() else 20,
                 debug_mode=self.debug_mode.get()
             )
             
             # Show success message
             messagebox.showinfo("Success", f"Maze loaded successfully. Size: {self.maze.rows}x{self.maze.cols}")
-            
-            # Show debug info if debug mode is enabled
-            if self.debug_mode.get():
-                messagebox.showinfo("Debug Info", "Debug images have been saved to the 'debug' folder in the current directory.")
             
         except Exception as e:
             # Display error message

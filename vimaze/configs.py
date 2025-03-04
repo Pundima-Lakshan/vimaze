@@ -134,13 +134,20 @@ solver_app_options = {
                         {
                             'type': 'button',
                             'text': 'Select Maze Image',
-                            'command': 'select_maze_image',  # Callback function name
+                            'command': 'select_maze_image', 
                         },
                         {
                             'type': 'input',
                             'key': 'image_path',
                             'label': 'Image Path',
                             'default_value': '',
+                        },
+                        {
+                            'type': 'dropdown',
+                            'label': 'Processor Type',
+                            'values': ['Standard Processor', 'Simple Processor'],
+                            'default_value': 'Standard Processor',
+                            'command': 'set_processor_type'
                         },
                         {
                             'type': 'input',
@@ -153,6 +160,12 @@ solver_app_options = {
                             'key': 'wall_threshold',
                             'label': 'Wall Threshold (0-255)',
                             'default_value': '127',
+                        },
+                        {
+                            'type': 'input',
+                            'key': 'cell_size',
+                            'label': 'Cell Size (Simple Processor)',
+                            'default_value': '20',
                         },
                         {
                             'type': 'button',
