@@ -352,4 +352,5 @@ class SimpleMazeProcessor:
         
         # Save simple visualization
         cv2.imwrite("simple_debug/07_simple_visualization.png", simple_viz)
+
         
