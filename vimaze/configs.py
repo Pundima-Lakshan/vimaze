@@ -220,6 +220,9 @@ solver_app_options = {
 }
 
 maze_animator_options = {
+    'defaults': {
+        'cell_fill': 'snow2'
+    },
     'generation': {
         'prims': {
             'action_colors': {
@@ -229,6 +232,22 @@ maze_animator_options = {
                 'maze_cell_select': 'green',
                 'maze_cell_deselect': 'white',
                 'node_connect': 'white'
+            }
+        }
+    },
+    'solving': {
+        'defaults': {
+            'path_color': 'green yellow',
+            'start_color': 'red',
+            'end_color': 'blue'
+        },
+        'dfs': {
+            'action_colors': {
+                'search_start_node': 'red',
+                'search_end_node': 'blue',
+                'visited_update': 'yellow',
+                'fully_visited_update': 'white',
+                'backtrack_path': 'green yellow'
             }
         }
     }

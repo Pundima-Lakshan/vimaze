@@ -42,15 +42,18 @@ class MazeAnimator:
         self.is_stop_animation = False
         self.animation_speed = speed
         
-        cell_fill = None
-        if self.operation == 'generation':
-            cell_fill = 'gray'
+        cell_fill = maze_animator_options['defaults']['cell_fill']
         
-        self.displayer.reset_maze_display(self.maze, cell_fill)
+        if self.operation == 'generation':
+            self.canvas.delete("all")
+            self.displayer.reset_maze_display(self.maze, cell_fill)
+        elif self.operation == 'solving':
+            self.displayer.display_maze(self.maze, cell_fill)
+        
         self.step_index = 0  # Initialize step index
     
         self.render_frame(self.step_index)
-
+        
     def render_frame(self, step_index):
         if step_index >= len(self.steps.steps):  # Stop when all steps are done
             return

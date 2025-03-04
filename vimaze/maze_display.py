@@ -5,6 +5,7 @@ from vimaze.graph import Graph
 
 if TYPE_CHECKING:
     from vimaze.maze import Maze
+    from vimaze.graph import Node
     from customtkinter import CTkCanvas
 
 
@@ -36,8 +37,8 @@ class MazeDisplay:
             (self.canvas.winfo_height() - maze_height) // 2
         )
 
-    def display_maze(self, maze: 'Maze'):
-        self.display_graph(maze.rows, maze.cols, maze.graph)
+    def display_maze(self, maze: 'Maze', cell_fill: str = None):
+        self.display_graph(maze.rows, maze.cols, maze.graph, cell_fill)
 
     def reset_maze_display(self, maze: 'Maze', cell_fill = None):
         rows, cols = maze.rows, maze.cols
@@ -105,6 +106,18 @@ class MazeDisplay:
         self.canvas.create_rectangle(x + offset, y + offset, x + self.cell_size - offset, y + self.cell_size - offset, outline=color,
                                      width=self.outline_width,
                                      fill=color)
+    
+    def display_path(self, nodes: list['Node'], path_color: str, start_color: str, end_color: str):
+        for index, node in enumerate(nodes):
+            row, col = node.position
+            
+            color = path_color
+            if index == 0:
+                color = start_color
+            elif index == len(nodes) - 1:
+                color = end_color
+                
+            self.display_cell(row, col, color)
 
     def draw_walls(self, x: int, y: int, directions: list[str], remove: bool):
         color = self.cell_outline if remove else self.wall_color

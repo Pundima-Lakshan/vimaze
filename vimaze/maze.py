@@ -2,6 +2,7 @@ from typing import Optional, TYPE_CHECKING
 
 from customtkinter import CTkCanvas
 
+from vimaze.configs import maze_animator_options
 from vimaze.maze_animator import MazeAnimator
 from vimaze.maze_display import MazeDisplay
 from vimaze.maze_graph_generator import MazeGraphGenerator
@@ -10,6 +11,7 @@ from vimaze.timer import Timer
 
 if TYPE_CHECKING:
     from vimaze.graph import Graph
+    from vimaze.graph import Node
     from vimaze.app import SolverApp
 
 
@@ -20,10 +22,10 @@ class Maze:
         self.app = app
 
         self.graph: Optional['Graph'] = None
-        
+
         self.gen_algorithm: Optional[str] = None
         self.solving_algorithm: Optional[str] = None
-        
+
         self.cols: Optional[int] = None
         self.rows: Optional[int] = None
 
@@ -31,7 +33,7 @@ class Maze:
         self.displayer = MazeDisplay(self.maze_canvas)
         self.animator = MazeAnimator(self.maze_canvas, self.displayer, self)
         self.generator = MazeGraphGenerator(self.animator, self.timer)
-        self.solver = MazeSolver(self.graph, self.animator)
+        self.solver = MazeSolver(self.animator, self.timer)
 
     def gen_algo_maze(self, rows: int, cols: int):
         self.rows = rows
@@ -47,5 +49,10 @@ class Maze:
     def display_maze(self):
         self.displayer.display_maze(self)
 
-    def animate_last_operation(self):
-        self.animator.animate()
+    def display_path(self, nodes: list['Node']):
+        self.displayer.display_path(nodes, maze_animator_options['solving']['defaults']['path_color'],
+                                    maze_animator_options['solving']['defaults']['start_color'],
+                                    maze_animator_options['solving']['defaults']['end_color'])
+
+    def solve_maze(self, start_pos: tuple[int, int], end_pos: tuple[int, int]):
+        self.solver.solve_maze(start_pos, end_pos, self.solving_algorithm, self.graph)

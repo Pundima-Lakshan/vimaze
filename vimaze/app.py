@@ -227,7 +227,6 @@ class SolverApp:
         logging.debug(f"Animation last action")
         # Add your logic here
 
-        self.maze_canvas.delete("all")
         self.maze.animator.animate(int(self.animation_speed_str.get()))
 
     def stop_animation(self):
@@ -243,4 +242,5 @@ class SolverApp:
         start_pos = tuple(int(x) for x in self.maze_start_pos_str.get().split(", "))
         end_pos = tuple(int(x) for x in self.maze_end_pos_str.get().split(", "))
                         
-        self.maze.solver.solve_maze(start_pos, end_pos, self.maze.solving_algorithm)
+        self.maze.solve_maze((start_pos[0], start_pos[1]), (end_pos[0], end_pos[1]))
+        self.maze.display_path(self.maze.solver.solved_path)
