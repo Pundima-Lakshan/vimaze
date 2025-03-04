@@ -249,6 +249,15 @@ maze_animator_options = {
                 'fully_visited_update': 'white',
                 'backtrack_path': 'green yellow'
             }
+        },
+        'bfs': {
+            'action_colors': {
+                'search_start_node': 'salmon',
+                'search_end_node': 'royal blue',
+                'visited_update': 'yellow',
+                'fully_visited_update': 'white',
+                'backtrack_path': 'green yellow'
+            }
         }
     }
 }
