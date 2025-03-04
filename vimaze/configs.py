@@ -7,14 +7,13 @@ maze_generation_options = {
         'prim': {
             'name': 'Prim\'s',
         },
-        'binary': {
-            'name': 'Binary',
-        },
-        'kruskal': {
-            'name': 'Kruskal',
-        },
-        'rec_backtrack': {
-            'name': 'Recursive Backtracking',
+    }
+}
+
+maze_solving_options = {
+    'algorithms': {
+        'dfs': {
+            'name': 'DFS',
         },
     }
 }
@@ -77,7 +76,7 @@ solver_app_options = {
                         {
                             'type': 'dropdown',
                             'label': 'Algorithm',
-                            'values': ['Prim\'s', 'Binary', 'Kruskal', 'Recursive Backtracking'],
+                            'values': ['Prim\'s'],
                             'default_value': '',
                             'command': 'set_maze_gen_algorithm'
                         },
@@ -104,17 +103,28 @@ solver_app_options = {
                     'name': 'Solving',
                     'controls': [
                         {
-                            'type': 'button',
-                            'text': 'Generate Maze',
-                            'command': 'generate_maze',  # Callback function name
+                            'type': 'dropdown',
+                            'label': 'Algorithm',
+                            'values': ['DFS', 'BFS'],
+                            'default_value': '',
+                            'command': 'set_maze_solving_algorithm'
                         },
                         {
-                            'type': 'slider',
-                            'label': 'Speed',
-                            'from_': 1,
-                            'to': 10,
-                            'default_value': 5,
-                            'command': 'set_speed',  # Callback function name
+                            'type': 'input',
+                            'key': 'maze_start_pos',
+                            'label': 'Start Position (0, 0)',
+                            'default_value': '0, 0',
+                        },
+                        {
+                            'type': 'input',
+                            'key': 'maze_end_pos',
+                            'label': 'End Position (9, 9)',
+                            'default_value': '9, 9',
+                        },
+                        {
+                            'type': 'button',
+                            'text': 'Solve Maze',
+                            'command': 'solve_maze',  # Callback function name
                         },
                     ]
                 },
@@ -128,16 +138,6 @@ solver_app_options = {
                         },
                     ]
                 },
-                {
-                    'name': 'Image2',
-                    'controls': [
-                        {
-                            'type': 'button',
-                            'text': 'Generate Maze',
-                            'command': 'generate_maze',  # Callback function name
-                        },
-                    ]
-                }
             ],
         },
         'animate_frame': {

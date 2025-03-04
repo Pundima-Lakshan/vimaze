@@ -29,11 +29,14 @@ class SolverApp:
         self.maze_cols_str = ctk.StringVar()
         self.animation_speed_str = ctk.StringVar()
         self.costs_str = ctk.StringVar()
+        self.maze_start_pos_str = ctk.StringVar()
+        self.maze_end_pos_str = ctk.StringVar()
 
         for frame_name, frame_config in solver_app_options['frames'].items():
             frame = ctk.CTkFrame(self.root, corner_radius=frame_config['corner_radius'],
                                  border_width=frame_config['border_width'], fg_color=frame_config['bg'])
-            frame.grid(row=frame_config['grid_options']['row'], rowspan=frame_config['grid_options']['rowspan'], column=frame_config['grid_options']['column'],
+            frame.grid(row=frame_config['grid_options']['row'], rowspan=frame_config['grid_options']['rowspan'],
+                       column=frame_config['grid_options']['column'],
                        sticky=frame_config['grid_options']['sticky'])
             frame.grid_propagate(False)
 
@@ -70,7 +73,7 @@ class SolverApp:
     def run(self):
         logging.debug("Running SolverApp")
         self.root.mainloop()
-        
+
     def on_resize(self, event):
         # logging.debug(f"Resizing SolverApp {event}")
 
@@ -147,6 +150,10 @@ class SolverApp:
             text_variable = self.animation_speed_str
         elif config['key'] == 'costs':
             text_variable = self.costs_str
+        elif config['key'] == 'maze_start_pos':
+            text_variable = self.maze_start_pos_str
+        elif config['key'] == 'maze_end_pos':
+            text_variable = self.maze_end_pos_str
 
         input_field = ctk.CTkEntry(parent, textvariable=text_variable)
         input_field.insert(0, config.get('default_value', ''))
@@ -176,7 +183,9 @@ class SolverApp:
             self.animate_last_action()
         elif command == 'stop_animation':
             self.stop_animation()
-            
+        elif command == 'solve_maze':
+            self.solve_display_maze()
+        
     def handle_slider_change(self, command, value):
         """Handle slider value changes."""
         logging.debug(f"Slider changed: {command} = {value}")
@@ -189,6 +198,8 @@ class SolverApp:
 
         if command == "set_maze_gen_algorithm":
             self.set_maze_gen_algorithm(value)
+        elif command == "set_maze_solving_algorithm":
+            self.set_maze_solving_algorithm(value)
 
     # Handler functions for the controls
 
@@ -198,6 +209,12 @@ class SolverApp:
 
         self.maze.set_maze_gen_algorithm(value)
 
+    def set_maze_solving_algorithm(self, value):
+        logging.debug(f"Setting maze solving algorithm to: {value}")
+        # Add your logic here
+
+        self.maze.set_maze_solving_algorithm(value)
+
     def gen_display_algo_maze(self):
         logging.debug(f"Generating maze: {int(self.maze_rows_str.get()), int(self.maze_cols_str.get())}")
         # Add your logic here
@@ -205,19 +222,25 @@ class SolverApp:
         self.maze.gen_algo_maze(int(self.maze_rows_str.get()), int(self.maze_cols_str.get()))
         self.maze_canvas.delete("all")
         self.maze.display_maze()
-        
+
     def animate_last_action(self):
         logging.debug(f"Animation last action")
         # Add your logic here
-        
+
         self.maze_canvas.delete("all")
         self.maze.animator.animate(int(self.animation_speed_str.get()))
-    
+
     def stop_animation(self):
         logging.debug(f"Animation last action")
         # Add your logic here
-        
+
         self.maze.animator.stop_animation()
+
+    def solve_display_maze(self):
+        logging.debug(f"Start solving maze")
+        # Add your logic here
         
-        
-        
+        start_pos = tuple(int(x) for x in self.maze_start_pos_str.get().split(", "))
+        end_pos = tuple(int(x) for x in self.maze_end_pos_str.get().split(", "))
+                        
+        self.maze.solver.solve_maze(start_pos, end_pos, self.maze.solving_algorithm)

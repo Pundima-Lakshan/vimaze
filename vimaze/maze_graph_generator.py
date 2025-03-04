@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from vimaze.maze_animator import MazeAnimator
     from vimaze.graph import Node
     from vimaze.timer import Timer
-    
 
 
 class MazeGraphGenerator:
@@ -28,7 +27,7 @@ class MazeGraphGenerator:
         if algorithm == "Prim\'s":
             generator = PrimsGenerator(rows, cols, graph, self.animator, self.timer)
             graph = generator.generate_maze()
-            
+
         return graph
 
     @staticmethod

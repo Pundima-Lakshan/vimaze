@@ -20,7 +20,10 @@ class Maze:
         self.app = app
 
         self.graph: Optional['Graph'] = None
+        
         self.gen_algorithm: Optional[str] = None
+        self.solving_algorithm: Optional[str] = None
+        
         self.cols: Optional[int] = None
         self.rows: Optional[int] = None
 
@@ -37,6 +40,9 @@ class Maze:
 
     def set_maze_gen_algorithm(self, value: str):
         self.gen_algorithm = value
+
+    def set_maze_solving_algorithm(self, value: str):
+        self.solving_algorithm = value
 
     def display_maze(self):
         self.displayer.display_maze(self)
