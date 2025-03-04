@@ -24,13 +24,15 @@ class SolverApp:
         for index, col in enumerate(solver_app_options['grid_config']['cols']):
             self.root.grid_columnconfigure(index, weight=col['weight'], minsize=col['minsize'])
 
+        # Input variables
         self.maze_rows_str = ctk.StringVar()
         self.maze_cols_str = ctk.StringVar()
+        self.animation_speed_str = ctk.StringVar()
 
         for frame_name, frame_config in solver_app_options['frames'].items():
             frame = ctk.CTkFrame(self.root, corner_radius=frame_config['corner_radius'],
                                  border_width=frame_config['border_width'], fg_color=frame_config['bg'])
-            frame.grid(row=frame_config['grid_options']['row'], column=frame_config['grid_options']['column'],
+            frame.grid(row=frame_config['grid_options']['row'], rowspan=frame_config['grid_options']['rowspan'], column=frame_config['grid_options']['column'],
                        sticky=frame_config['grid_options']['sticky'])
             frame.grid_propagate(False)
 
@@ -40,6 +42,9 @@ class SolverApp:
                 self.add_tabs(frame_config.get('tabs', []))
             elif frame_name == "maze_frame":
                 self.maze_frame = frame
+            elif frame_name == 'info_frame':
+                self.info_frame = frame
+                self.add_controls(frame, frame_config.get('controls', []))
 
         for canvas_name, canvas_config in solver_app_options['canvases'].items():
             frame = self.maze_frame
@@ -134,6 +139,8 @@ class SolverApp:
             text_variable = self.maze_rows_str
         elif config['key'] == 'maze_cols':
             text_variable = self.maze_cols_str
+        elif config['key'] == 'animation_speed':
+            text_variable = self.animation_speed_str
 
         input_field = ctk.CTkEntry(parent, textvariable=text_variable)
         input_field.insert(0, config.get('default_value', ''))
@@ -159,10 +166,11 @@ class SolverApp:
 
         if command == "gen_display_algo_maze":
             self.gen_display_algo_maze()
-        
-        if command == 'animate_last_action':
+        elif command == 'animate_last_action':
             self.animate_last_action()
-
+        elif command == 'stop_animation':
+            self.stop_animation()
+            
     def handle_slider_change(self, command, value):
         """Handle slider value changes."""
         logging.debug(f"Slider changed: {command} = {value}")
@@ -197,6 +205,13 @@ class SolverApp:
         # Add your logic here
         
         self.maze_canvas.delete("all")
-        self.maze.animator.animate()
+        self.maze.animator.animate(int(self.animation_speed_str.get()))
+    
+    def stop_animation(self):
+        logging.debug(f"Animation last action")
+        # Add your logic here
+        
+        self.maze.animator.stop_animation()
+        
         
         

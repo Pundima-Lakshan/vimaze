@@ -33,13 +33,17 @@ solver_app_options = {
     'window': {
         'title': "Maze Solver",
         'window_width': 920,
-        'window_height': 620
+        'window_height': 740
     },
     'grid_config': {
         'rows': [
             {
                 'weight': 1,
                 'minsize': 500
+            },
+            {
+                'weight': 1,
+                'minsize': 200
             },
         ],
         'cols': [
@@ -57,13 +61,14 @@ solver_app_options = {
         'controls_frame': {
             'grid_options': {
                 'row': 0,
+                'rowspan': 1,
                 'column': 1,
                 'sticky': "nsew"
             },
             'corner_radius': 0,
             'border_width': 0,
             'width': 300,
-            'height': 600,
+            'height': 400,
             'bg': "blue",
             'tabs': [
                 {
@@ -92,11 +97,6 @@ solver_app_options = {
                             'type': 'button',
                             'text': 'Generate Maze',
                             'command': 'gen_display_algo_maze',  # Callback function name
-                        },
-                        {
-                            'type': 'button',
-                            'text': 'Animate Last Operation',
-                            'command': 'animate_last_action',  # Callback function name
                         },
                     ]
                 },
@@ -140,9 +140,41 @@ solver_app_options = {
                 }
             ],
         },
+        'info_frame': {
+            'grid_options': {
+                'row': 1,
+                'rowspan': 1,
+                'column': 1,
+                'sticky': "nsew"
+            },
+            'corner_radius': 0,
+            'border_width': 0,
+            'width': 300,
+            'height': 200,
+            'bg': "pink",
+            'controls': [
+                {
+                    'type': 'input',
+                    'key': 'animation_speed',
+                    'label': 'Delay in ms',
+                    'default_value': 50,
+                },
+                {
+                    'type': 'button',
+                    'text': 'Animate Last Operation',
+                    'command': 'animate_last_action',  # Callback function name
+                },
+                {
+                    'type': 'button',
+                    'text': 'Stop animation',
+                    'command': 'stop_animation',  # Callback function name
+                },
+            ]
+        },
         'maze_frame': {
             'grid_options': {
                 'row': 0,
+                'rowspan': 2,
                 'column': 0,
                 'sticky': "nsew"
             },

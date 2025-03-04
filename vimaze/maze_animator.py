@@ -20,6 +20,9 @@ class MazeAnimator:
 
         self.step_index = 0
         
+        self.is_stop_animation = False
+        self.animation_speed = 100
+        
         self.operation = None
         self.algorithm = None
 
@@ -35,7 +38,10 @@ class MazeAnimator:
     def add_step_edge(self, nodes: list['Node'], action: str):
         self.steps.add_step(Step(nodes, action, 'edge'))
 
-    def animate(self):
+    def animate(self, speed: int):
+        self.is_stop_animation = False
+        self.animation_speed = speed
+        
         cell_fill = None
         if self.operation == 'generation':
             cell_fill = 'gray'
@@ -47,6 +53,10 @@ class MazeAnimator:
 
     def render_frame(self, step_index):
         if step_index >= len(self.steps.steps):  # Stop when all steps are done
+            return
+        
+        if self.is_stop_animation:
+            self.displayer.display_maze(self.maze)
             return
     
         step = self.steps.steps[step_index]
@@ -60,4 +70,7 @@ class MazeAnimator:
             self.displayer.display_walls(node_u.position, node_v.position, True)
     
         # Schedule the next frame with an increased step_index
-        self.canvas.after(100, lambda: self.render_frame(step_index + 1))
+        self.canvas.after(self.animation_speed, lambda: self.render_frame(step_index + 1))
+    
+    def stop_animation(self):
+        self.is_stop_animation = True
