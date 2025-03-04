@@ -7,15 +7,17 @@ if TYPE_CHECKING:
     from vimaze.graph import Node
     from vimaze.graph import Graph
     from vimaze.maze_animator import MazeAnimator
+    from vimaze.timer import Timer
 
 
 class PrimsGenerator:
-    def __init__(self, rows: int, cols: int, graph: 'Graph', animator: 'MazeAnimator'):
+    def __init__(self, rows: int, cols: int, graph: 'Graph', animator: 'MazeAnimator', timer: 'Timer'):
         self.rows = rows
         self.cols = cols
 
         self.graph = graph
         self.animator = animator
+        self.timer = timer
 
         self.frontier_names: IndexedSet[str] = IndexedSet()
         self.visited_names: IndexedSet[str] = IndexedSet()
@@ -33,6 +35,7 @@ class PrimsGenerator:
 
     def generate_maze(self):
         self.animator.start_recording('generation', 'prims')
+        self.timer.start('generation', 'prims')
 
         start_node = self.graph.get_node((0, 0))
 
@@ -61,6 +64,8 @@ class PrimsGenerator:
             self.visited_names.add(selected_frontier_cell_name)
             self.animator.add_step_cell(self.graph.nodes[selected_frontier_cell_name], 'visited_update')
 
+        self.timer.stop()
+        
         return self.graph
 
     def update_frontier_cells(self, node: 'Node'):

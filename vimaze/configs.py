@@ -39,7 +39,7 @@ solver_app_options = {
         'rows': [
             {
                 'weight': 1,
-                'minsize': 500
+                'minsize': 400
             },
             {
                 'weight': 1,
@@ -68,8 +68,8 @@ solver_app_options = {
             'corner_radius': 0,
             'border_width': 0,
             'width': 300,
-            'height': 400,
-            'bg': "blue",
+            'height': 350,
+            'bg': "gainsboro",
             'tabs': [
                 {
                     'name': 'Generation',
@@ -140,7 +140,7 @@ solver_app_options = {
                 }
             ],
         },
-        'info_frame': {
+        'animate_frame': {
             'grid_options': {
                 'row': 1,
                 'rowspan': 1,
@@ -151,7 +151,7 @@ solver_app_options = {
             'border_width': 0,
             'width': 300,
             'height': 200,
-            'bg': "pink",
+            'bg': "gainsboro",
             'controls': [
                 {
                     'type': 'input',
@@ -171,25 +171,46 @@ solver_app_options = {
                 },
             ]
         },
+        'cost_frame': {
+            'grid_options': {
+                'row': 1,
+                'rowspan': 1,
+                'column': 0,
+                'sticky': "nsew"
+            },
+            'corner_radius': 0,
+            'border_width': 0,
+            'width': 300,
+            'height': 200,
+            'bg': "gainsboro",
+            'controls': [
+                {
+                    'type': 'input',
+                    'key': 'costs',
+                    'label': 'Costs (operation, algorithm, cost)',
+                    'default_value': '',
+                },
+            ]
+        },
         'maze_frame': {
             'grid_options': {
                 'row': 0,
-                'rowspan': 2,
+                'rowspan': 1,
                 'column': 0,
                 'sticky': "nsew"
             },
             'corner_radius': 0,
             'border_width': 0,
             'width': 600,
-            'height': 600,
-            'bg': "green"
+            'height': 400,
+            'bg': "gainsboro"
         },
     },
     'canvases': {
         'maze_canvas': {
             'width': 600,
             'height': 600,
-            'bg': "red",
+            'bg': "sky blue",
             'pack_config': {
                 'fill': "both",
                 'expand': True

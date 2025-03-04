@@ -7,11 +7,14 @@ from vimaze.graph import Graph
 if TYPE_CHECKING:
     from vimaze.maze_animator import MazeAnimator
     from vimaze.graph import Node
+    from vimaze.timer import Timer
+    
 
 
 class MazeGraphGenerator:
-    def __init__(self, animator: 'MazeAnimator'):
+    def __init__(self, animator: 'MazeAnimator', timer: 'Timer'):
         self.animator = animator
+        self.timer = timer
 
     def generate_maze_graph(self, rows: int, cols: int, algorithm: str):
         """Generates a maze using the specified algorithm."""
@@ -23,7 +26,7 @@ class MazeGraphGenerator:
                 graph.add_node((row, col))
 
         if algorithm == "Prim\'s":
-            generator = PrimsGenerator(rows, cols, graph, self.animator)
+            generator = PrimsGenerator(rows, cols, graph, self.animator, self.timer)
             graph = generator.generate_maze()
             
         return graph

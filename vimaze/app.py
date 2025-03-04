@@ -28,6 +28,7 @@ class SolverApp:
         self.maze_rows_str = ctk.StringVar()
         self.maze_cols_str = ctk.StringVar()
         self.animation_speed_str = ctk.StringVar()
+        self.costs_str = ctk.StringVar()
 
         for frame_name, frame_config in solver_app_options['frames'].items():
             frame = ctk.CTkFrame(self.root, corner_radius=frame_config['corner_radius'],
@@ -42,8 +43,11 @@ class SolverApp:
                 self.add_tabs(frame_config.get('tabs', []))
             elif frame_name == "maze_frame":
                 self.maze_frame = frame
-            elif frame_name == 'info_frame':
-                self.info_frame = frame
+            elif frame_name == 'animate_frame':
+                self.animate_frame = frame
+                self.add_controls(frame, frame_config.get('controls', []))
+            elif frame_name == 'cost_frame':
+                self.cost_frame = frame
                 self.add_controls(frame, frame_config.get('controls', []))
 
         for canvas_name, canvas_config in solver_app_options['canvases'].items():
@@ -51,7 +55,7 @@ class SolverApp:
             if canvas_name == "maze_canvas":
                 frame = self.maze_frame
 
-            canvas = ctk.CTkCanvas(frame, bg=canvas_config['bg'],
+            canvas = ctk.CTkCanvas(frame, bg=canvas_config['bg'], borderwidth=0,
                                    width=canvas_config['width'],
                                    height=canvas_config['height'])
             canvas.pack(fill=canvas_config['pack_config']['fill'], expand=canvas_config['pack_config']['expand'])
@@ -61,7 +65,7 @@ class SolverApp:
 
         self.root.bind("<Configure>", self.on_resize)
 
-        self.maze = Maze(self.maze_canvas)
+        self.maze = Maze(self.maze_canvas, self)
 
     def run(self):
         logging.debug("Running SolverApp")
@@ -86,13 +90,13 @@ class SolverApp:
         if not self.controls_frame:
             return
 
-        container = ctk.CTkFrame(self.controls_frame, fg_color="green",
+        container = ctk.CTkFrame(self.controls_frame, fg_color=solver_app_options['frames']['controls_frame']['bg'],
                                  width=solver_app_options['frames']['controls_frame']['width'], )
         container.pack(expand=True, fill="y", pady=20)  # Add some padding at the top and bottom
         container.pack_propagate(False)
 
         # Create a CTkTabview inside the controls_frame
-        self.tabview = ctk.CTkTabview(container)
+        self.tabview = ctk.CTkTabview(container, fg_color=solver_app_options['frames']['controls_frame']['bg'])
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Add tabs dynamically
@@ -141,6 +145,8 @@ class SolverApp:
             text_variable = self.maze_cols_str
         elif config['key'] == 'animation_speed':
             text_variable = self.animation_speed_str
+        elif config['key'] == 'costs':
+            text_variable = self.costs_str
 
         input_field = ctk.CTkEntry(parent, textvariable=text_variable)
         input_field.insert(0, config.get('default_value', ''))
