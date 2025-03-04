@@ -1,12 +1,14 @@
 import logging
 
 import customtkinter as ctk
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
 from vimaze.configs import solver_app_options
 from vimaze.maze import Maze
+from tkinter import messagebox
 
 logging.basicConfig(level=logging.DEBUG)
-
 
 class SolverApp:
     def __init__(self):
@@ -31,6 +33,12 @@ class SolverApp:
         self.costs_str = ctk.StringVar()
         self.maze_start_pos_str = ctk.StringVar()
         self.maze_end_pos_str = ctk.StringVar()
+        
+        # Image processing variables
+        self.image_path_str = ctk.StringVar()
+        self.invert_binary_str = ctk.StringVar(value="false")
+        self.wall_threshold_str = ctk.StringVar(value="127")
+        self.debug_mode = ctk.BooleanVar(value=False)
 
         for frame_name, frame_config in solver_app_options['frames'].items():
             frame = ctk.CTkFrame(self.root, corner_radius=frame_config['corner_radius'],
@@ -119,6 +127,8 @@ class SolverApp:
                 self.add_input(parent, control_config)
             elif control_type == 'dropdown':
                 self.add_dropdown(parent, control_config)
+            elif control_type == 'checkbox':
+                self.add_checkbox(parent, control_config)
 
     def add_button(self, parent, config):
         """Add a button to the parent frame."""
@@ -141,7 +151,7 @@ class SolverApp:
         label = ctk.CTkLabel(parent, text=config.get('label', 'Input'))
         label.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
-        text_variable = ctk.StringVar()
+        text_variable = None
         if config['key'] == 'maze_rows':
             text_variable = self.maze_rows_str
         elif config['key'] == 'maze_cols':
@@ -154,11 +164,20 @@ class SolverApp:
             text_variable = self.maze_start_pos_str
         elif config['key'] == 'maze_end_pos':
             text_variable = self.maze_end_pos_str
+        elif config['key'] == 'image_path':
+            text_variable = self.image_path_str
+        elif config['key'] == 'invert_binary':
+            text_variable = self.invert_binary_str
+        elif config['key'] == 'wall_threshold':
+            text_variable = self.wall_threshold_str
+        else:
+            text_variable = ctk.StringVar()
 
         input_field = ctk.CTkEntry(parent, textvariable=text_variable)
+        input_field.delete(0, 'end')  # Clear any existing text
         input_field.insert(0, config.get('default_value', ''))
         input_field.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
-
+        
     def add_dropdown(self, parent, config):
         """Add a dropdown menu to the parent frame."""
         # Add a label for the dropdown
@@ -171,6 +190,31 @@ class SolverApp:
         dropdown.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
 
     # Common button handlers
+    
+    def add_checkbox(self, parent, config):
+        """Add a checkbox to the parent frame."""
+        checkbox_var = None
+        if config['key'] == 'debug_mode':
+            checkbox_var = self.debug_mode
+        else:
+            checkbox_var = ctk.BooleanVar(value=config.get('default_value', False))
+        
+        checkbox = ctk.CTkCheckBox(
+            parent, 
+            text=config.get('label', 'Checkbox'),
+            variable=checkbox_var,
+            command=lambda: self.handle_checkbox_toggle(config.get('command'))
+        )
+        checkbox.pack(pady=5, padx=10, fill="x")
+        
+        return checkbox
+
+    def handle_checkbox_toggle(self, command):
+        """Handle checkbox toggle events."""
+        logging.debug(f"Checkbox toggled: {command}")
+        
+        if command == 'toggle_debug_mode':
+            self.toggle_debug_mode()
 
     def handle_button_click(self, command):
         """Handle button click events."""
@@ -185,6 +229,12 @@ class SolverApp:
             self.stop_animation()
         elif command == 'solve_maze':
             self.solve_display_maze()
+        elif command == 'select_maze_image':
+            self.select_maze_image()
+        elif command == 'process_maze_image':
+            self.process_maze_image()
+        elif command == 'toggle_debug_mode':
+            self.toggle_debug_mode()
         
     def handle_slider_change(self, command, value):
         """Handle slider value changes."""
@@ -200,6 +250,73 @@ class SolverApp:
             self.set_maze_gen_algorithm(value)
         elif command == "set_maze_solving_algorithm":
             self.set_maze_solving_algorithm(value)
+            
+    def select_maze_image(self):
+        """
+        Open a file dialog to select a maze image.
+        """
+        file_path = filedialog.askopenfilename(
+            title="Select Maze Image",
+            filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif")],
+            parent=self.root  # Use the main window as parent
+        )
+        
+        # Update the path variable if a file was selected
+        if file_path:
+            self.image_path_str.set(file_path)
+            logging.debug(f"Selected image: {file_path}")
+            
+            # Also update the input field directly
+            for tab in self.tabview.winfo_children():
+                if isinstance(tab, ctk.CTkFrame):
+                    for widget in tab.winfo_children():
+                        if isinstance(widget, ctk.CTkEntry) and widget.cget("textvariable") == self.image_path_str:
+                            widget.delete(0, 'end')
+                            widget.insert(0, file_path)
+    
+    def process_maze_image(self):
+        """
+        Process the selected maze image and initialize the maze.
+        """
+        image_path = self.image_path_str.get()
+        
+        if not image_path:
+            messagebox.showerror("Error", "Please select an image file first.")
+            return
+        
+        try:            
+            # Configure the maze image processor through the maze instance
+            self.maze.init_from_image_with_params(
+                image_path, 
+                invert_binary=(self.invert_binary_str.get().lower() == "true"),
+                wall_threshold=int(self.wall_threshold_str.get()) if self.wall_threshold_str.get().isdigit() else 127,
+                debug_mode=self.debug_mode.get()
+            )
+            
+            # Show success message
+            messagebox.showinfo("Success", f"Maze loaded successfully. Size: {self.maze.rows}x{self.maze.cols}")
+            
+            # Show debug info if debug mode is enabled
+            if self.debug_mode.get():
+                messagebox.showinfo("Debug Info", "Debug images have been saved to the 'debug' folder in the current directory.")
+            
+        except Exception as e:
+            # Display error message
+            messagebox.showerror("Error", f"Failed to process maze image: {str(e)}")
+            import traceback
+            traceback.print_exc()  # Print the full traceback for debugging
+        
+    def toggle_debug_mode(self):
+        """
+        Toggle debug mode for image processing.
+        """
+        current_value = self.debug_mode.get()
+        self.debug_mode.set(not current_value)
+        # Show message to user
+        if current_value:
+            messagebox.showinfo("Debug Mode", "Debug mode enabled. Debug images will be saved to the 'debug' folder.")
+        else:
+            messagebox.showinfo("Debug Mode", "Debug mode disabled.")
 
     # Handler functions for the controls
 

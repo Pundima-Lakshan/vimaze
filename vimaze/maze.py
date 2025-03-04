@@ -39,6 +39,48 @@ class Maze:
         self.rows = rows
         self.cols = cols
         self.graph = self.generator.generate_maze_graph(rows, cols, self.gen_algorithm)
+        
+    def init_from_image(self, image_path: str):
+        """
+        Initialize maze from an image.
+        
+        Args:
+            image_path: Path to the maze image file
+        """
+        from vimaze.maze_image_processor import MazeImageProcessor
+        # Create a processor and process the image
+        processor = MazeImageProcessor(self.timer)
+        self.graph, self.rows, self.cols = processor.process_image(image_path)
+        # Display the maze
+        self.display_maze()
+        
+    def init_from_image_with_params(self, image_path: str, invert_binary: bool = False, 
+                            wall_threshold: int = 127, debug_mode: bool = False):
+        """
+        Initialize maze from an image with custom parameters.
+        
+        Args:
+            image_path: Path to the maze image file
+            invert_binary: Whether to invert the binary image
+            wall_threshold: Threshold for wall detection (0-255)
+            debug_mode: Whether to save debug visualizations
+        """
+        from vimaze.maze_image_processor import MazeImageProcessor
+        
+        # Create a processor with custom parameters
+        processor = MazeImageProcessor(self.timer)
+        
+        # Set parameters
+        processor.invert_binary = invert_binary
+        processor.wall_threshold = wall_threshold
+        processor.debug_mode = debug_mode
+        
+        # Process the image
+        self.graph, self.rows, self.cols = processor.process_image(image_path)
+        
+        # Display the maze
+        self.maze_canvas.delete("all")  # Clear existing content
+        self.display_maze()
 
     def set_maze_gen_algorithm(self, value: str):
         self.gen_algorithm = value

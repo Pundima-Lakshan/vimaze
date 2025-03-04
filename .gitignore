@@ -8,3 +8,6 @@ dist/
 **/.DS_Store
 
 .idea
+venv/
+debug/
+simple_debug/
