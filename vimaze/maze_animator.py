@@ -1,19 +1,63 @@
 from typing import TYPE_CHECKING
 
+from vimaze.configs import maze_animator_options
+from vimaze.steps import Step
 from vimaze.steps import Steps
 
 if TYPE_CHECKING:
     from customtkinter import CTkCanvas
-    from vimaze.steps import Step
+    from vimaze.graph import Node
+    from vimaze.maze_display import MazeDisplay
+    from vimaze.maze import Maze
 
 
 class MazeAnimator:
-    def __init__(self, canvas: 'CTkCanvas'):
+    def __init__(self, canvas: 'CTkCanvas', displayer: 'MazeDisplay', maze: 'Maze'):
         self.steps = Steps()
         self.canvas = canvas
+        self.displayer = displayer
+        self.maze = maze
 
-    def add_step(self, step: 'Step'):
-        self.steps.add_step(step)
+        self.step_index = 0
+        
+        self.operation = None
+        self.algorithm = None
+
+    def start_recording(self, operation: str, algorithm: str):
+        self.operation = operation
+        self.algorithm = algorithm
+
+        self.steps.clear_steps()
+
+    def add_step_cell(self, node: 'Node', action: str):
+        self.steps.add_step(Step([node], action, 'cell'))
+
+    def add_step_edge(self, nodes: list['Node'], action: str):
+        self.steps.add_step(Step(nodes, action, 'edge'))
 
     def animate(self):
-        pass
+        cell_fill = None
+        if self.operation == 'generation':
+            cell_fill = 'gray'
+        
+        self.displayer.reset_maze_display(self.maze, cell_fill)
+        self.step_index = 0  # Initialize step index
+    
+        self.render_frame(self.step_index)
+
+    def render_frame(self, step_index):
+        if step_index >= len(self.steps.steps):  # Stop when all steps are done
+            return
+    
+        step = self.steps.steps[step_index]
+        
+        if step.category == 'cell':
+            row, col = step.nodes[0].position
+            color = maze_animator_options[self.operation][self.algorithm]['action_colors'][step.action]
+            self.displayer.display_cell(row, col, color)
+        elif step.category == 'edge':
+            node_u, node_v = step.nodes
+            self.displayer.display_walls(node_u.position, node_v.position, True)
+    
+        # Schedule the next frame with an increased step_index
+        self.canvas.after(100, lambda: self.render_frame(step_index + 1))

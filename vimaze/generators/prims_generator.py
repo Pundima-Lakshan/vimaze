@@ -6,14 +6,16 @@ from vimaze.ds.indexed_set import IndexedSet
 if TYPE_CHECKING:
     from vimaze.graph import Node
     from vimaze.graph import Graph
+    from vimaze.maze_animator import MazeAnimator
 
 
 class PrimsGenerator:
-    def __init__(self, rows: int, cols: int, graph: 'Graph'):
+    def __init__(self, rows: int, cols: int, graph: 'Graph', animator: 'MazeAnimator'):
         self.rows = rows
         self.cols = cols
 
         self.graph = graph
+        self.animator = animator
 
         self.frontier_names: IndexedSet[str] = IndexedSet()
         self.visited_names: IndexedSet[str] = IndexedSet()
@@ -30,25 +32,41 @@ class PrimsGenerator:
     #   Mark c as visited
 
     def generate_maze(self):
+        self.animator.start_recording('generation', 'prims')
+
         start_node = self.graph.get_node((0, 0))
 
         self.visited_names.add(start_node.name)
+        self.animator.add_step_cell(start_node, 'visited_update')
+
         self.update_frontier_cells(start_node)
 
         while len(self.frontier_names) != 0:
             selected_frontier_cell_name = PrimsGenerator.pop_a_random_element(self.frontier_names)
+            self.animator.add_step_cell(self.graph.nodes[selected_frontier_cell_name], 'frontier_select')
+
             selected_maze_cell_name = PrimsGenerator.pop_a_random_element(self.get_possible_4_adjacent_maze_nodes(
                 self.graph.nodes[selected_frontier_cell_name])).name
+            self.animator.add_step_cell(self.graph.nodes[selected_maze_cell_name], 'maze_cell_select')
+            self.animator.add_step_cell(self.graph.nodes[selected_maze_cell_name], 'maze_cell_deselect')
+
             self.graph.connect_nodes(self.graph.nodes[selected_frontier_cell_name].position,
                                      self.graph.nodes[selected_maze_cell_name].position)
+            self.animator.add_step_edge(
+                [self.graph.nodes[selected_frontier_cell_name], self.graph.nodes[selected_maze_cell_name]],
+                'node_connect')
+            
             self.update_frontier_cells(self.graph.nodes[selected_frontier_cell_name])
+
             self.visited_names.add(selected_frontier_cell_name)
+            self.animator.add_step_cell(self.graph.nodes[selected_frontier_cell_name], 'visited_update')
 
         return self.graph
 
     def update_frontier_cells(self, node: 'Node'):
         for neighbour in self.get_possible_frontier_nodes(node):
             self.frontier_names.add(neighbour.name)
+            self.animator.add_step_cell(neighbour, 'frontier_update')
 
     def get_possible_frontier_nodes(self, node: 'Node'):
         nodes: list['Node'] = []
@@ -87,7 +105,7 @@ class PrimsGenerator:
             neighbours.append(neighbour)
 
         return neighbours
-    
+
     @staticmethod
     def pop_a_random_element(node_set: IndexedSet):
         random_index = random.randint(0, len(node_set) - 1)

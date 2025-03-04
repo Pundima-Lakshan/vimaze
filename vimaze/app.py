@@ -58,6 +58,10 @@ class SolverApp:
 
         self.maze = Maze(self.maze_canvas)
 
+    def run(self):
+        logging.debug("Running SolverApp")
+        self.root.mainloop()
+        
     def on_resize(self, event):
         # logging.debug(f"Resizing SolverApp {event}")
 
@@ -155,6 +159,9 @@ class SolverApp:
 
         if command == "gen_display_algo_maze":
             self.gen_display_algo_maze()
+        
+        if command == 'animate_last_action':
+            self.animate_last_action()
 
     def handle_slider_change(self, command, value):
         """Handle slider value changes."""
@@ -184,7 +191,12 @@ class SolverApp:
         self.maze.gen_algo_maze(int(self.maze_rows_str.get()), int(self.maze_cols_str.get()))
         self.maze_canvas.delete("all")
         self.maze.display_maze()
-
-    def run(self):
-        logging.debug("Running SolverApp")
-        self.root.mainloop()
+        
+    def animate_last_action(self):
+        logging.debug(f"Animation last action")
+        # Add your logic here
+        
+        self.maze_canvas.delete("all")
+        self.maze.animator.animate()
+        
+        

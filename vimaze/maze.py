@@ -20,9 +20,9 @@ class Maze:
         self.cols: Optional[int] = None
         self.rows: Optional[int] = None
 
-        self.animator = MazeAnimator(self.maze_canvas)
+        self.displayer = MazeDisplay(self.maze_canvas)
+        self.animator = MazeAnimator(self.maze_canvas, self.displayer, self)
         self.generator = MazeGraphGenerator(self.animator)
-        self.displayer = MazeDisplay()
         self.solver = MazeSolver(self.graph, self.animator)
 
     def gen_algo_maze(self, rows: int, cols: int):
@@ -34,7 +34,7 @@ class Maze:
         self.gen_algorithm = value
 
     def display_maze(self):
-        self.displayer.display_maze(self, self.maze_canvas)
+        self.displayer.display_maze(self)
 
     def animate_last_operation(self):
         self.animator.animate()

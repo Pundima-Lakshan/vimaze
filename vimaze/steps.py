@@ -5,14 +5,15 @@ if TYPE_CHECKING:
 
 
 class Step:
-    def __init__(self, node: 'Node', action: str):
-        self.node = node
+    def __init__(self, nodes: list['Node'], action: str, category: str):
+        self.nodes = nodes
         self.action = action
+        self.category = category
 
 
 class Steps:
     def __init__(self):
-        self.steps = []
+        self.steps: list[Step] = []
         self.actions_map = {}
 
     def add_action(self, action: str):
@@ -22,3 +23,7 @@ class Steps:
     def add_step(self, step: Step):
         self.steps.append(step)
         self.add_action(step.action)
+    
+    def clear_steps(self):
+        self.steps.clear()
+        self.actions_map.clear()

@@ -23,7 +23,7 @@ class MazeGraphGenerator:
                 graph.add_node((row, col))
 
         if algorithm == "Prim\'s":
-            generator = PrimsGenerator(rows, cols, graph)
+            generator = PrimsGenerator(rows, cols, graph, self.animator)
             graph = generator.generate_maze()
             
         return graph

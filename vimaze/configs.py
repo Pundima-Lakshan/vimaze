@@ -93,6 +93,11 @@ solver_app_options = {
                             'text': 'Generate Maze',
                             'command': 'gen_display_algo_maze',  # Callback function name
                         },
+                        {
+                            'type': 'button',
+                            'text': 'Animate Last Operation',
+                            'command': 'animate_last_action',  # Callback function name
+                        },
                     ]
                 },
                 {
@@ -159,4 +164,19 @@ solver_app_options = {
             },
         },
     },
+}
+
+maze_animator_options = {
+    'generation': {
+        'prims': {
+            'action_colors': {
+                'visited_update': 'white',
+                'frontier_update': 'pink',
+                'frontier_select': 'yellow',
+                'maze_cell_select': 'green',
+                'maze_cell_deselect': 'white',
+                'node_connect': 'white'
+            }
+        }
+    }
 }
