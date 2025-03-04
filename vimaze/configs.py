@@ -1,23 +1,3 @@
-maze_generation_options = {
-    'defaults': {
-        'rows': 10,
-        'cols': 10,
-    },
-    'algorithms': {
-        'prim': {
-            'name': 'Prim\'s',
-        },
-    }
-}
-
-maze_solving_options = {
-    'algorithms': {
-        'dfs': {
-            'name': 'DFS',
-        },
-    }
-}
-
 maze_display_options = {
     'speed': 5,
     'cell_color': "white",
@@ -105,7 +85,7 @@ solver_app_options = {
                         {
                             'type': 'dropdown',
                             'label': 'Algorithm',
-                            'values': ['DFS', 'BFS'],
+                            'values': ['DFS', 'BFS', 'Dijkstra'],
                             'default_value': '',
                             'command': 'set_maze_solving_algorithm'
                         },
@@ -157,7 +137,7 @@ solver_app_options = {
                     'type': 'input',
                     'key': 'animation_speed',
                     'label': 'Delay in ms',
-                    'default_value': 50,
+                    'default_value': 1,
                 },
                 {
                     'type': 'button',
@@ -254,8 +234,17 @@ maze_animator_options = {
             'action_colors': {
                 'search_start_node': 'salmon',
                 'search_end_node': 'royal blue',
-                'visited_update': 'yellow',
-                'fully_visited_update': 'white',
+                'queue_append': 'yellow',
+                'queue_pop': 'white',
+                'backtrack_path': 'green yellow'
+            }
+        },
+        'dijkstra': {
+            'action_colors': {
+                'search_start_node': 'salmon',
+                'search_end_node': 'royal blue',
+                'pq_push': 'yellow',
+                'pq_pop': 'white',
                 'backtrack_path': 'green yellow'
             }
         }
