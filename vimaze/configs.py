@@ -187,7 +187,7 @@ solver_app_options = {
                 {
                     'type': 'input',
                     'key': 'costs',
-                    'label': 'Costs (operation, algorithm, cost)',
+                    'label': 'STAT (State, Operation, Algorithm, Cost)',
                     'default_value': '',
                 },
             ]
@@ -221,7 +221,7 @@ solver_app_options = {
 
 maze_animator_options = {
     'defaults': {
-        'cell_fill': 'snow2'
+        'cell_fill': 'gray90'
     },
     'generation': {
         'prims': {
@@ -229,7 +229,7 @@ maze_animator_options = {
                 'visited_update': 'white',
                 'frontier_update': 'pink',
                 'frontier_select': 'yellow',
-                'maze_cell_select': 'green',
+                'maze_cell_select': 'green yellow',
                 'maze_cell_deselect': 'white',
                 'node_connect': 'white'
             }
@@ -238,13 +238,13 @@ maze_animator_options = {
     'solving': {
         'defaults': {
             'path_color': 'green yellow',
-            'start_color': 'red',
-            'end_color': 'blue'
+            'start_color': 'salmon',
+            'end_color': 'royal blue'
         },
         'dfs': {
             'action_colors': {
-                'search_start_node': 'red',
-                'search_end_node': 'blue',
+                'search_start_node': 'salmon',
+                'search_end_node': 'royal blue',
                 'visited_update': 'yellow',
                 'fully_visited_update': 'white',
                 'backtrack_path': 'green yellow'
