@@ -3,8 +3,8 @@ import sys
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from vimaze.graph import Graph
-    from vimaze.maze_animator import MazeAnimator
+    from vimaze.ds.graph import Graph
+    from vimaze.animator import MazeAnimator
     from vimaze.timer import Timer
 
 
@@ -50,7 +50,7 @@ class DijkstraSolver:
         while pq_names:
             d, x_name = heapq.heappop(pq_names)
             if x_name == self.graph.get_node(start_pos).name:
-                self.animator.add_step_cell(self.graph.nodes[x_name], 'search_start_node')            
+                self.animator.add_step_cell(self.graph.nodes[x_name], 'search_start_node')
             else:
                 self.animator.add_step_cell(self.graph.nodes[x_name], 'pq_pop')
 

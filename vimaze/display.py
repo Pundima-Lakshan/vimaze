@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
 from vimaze.configs import maze_display_options
-from vimaze.graph import Graph
+from vimaze.ds.graph import Graph
 
 if TYPE_CHECKING:
     from vimaze.maze import Maze
-    from vimaze.graph import Node
+    from vimaze.ds.graph import Node
     from customtkinter import CTkCanvas
 
 
@@ -40,7 +40,7 @@ class MazeDisplay:
     def display_maze(self, maze: 'Maze', cell_fill: str = None):
         self.display_graph(maze.rows, maze.cols, maze.graph, cell_fill)
 
-    def reset_maze_display(self, maze: 'Maze', cell_fill = None):
+    def reset_maze_display(self, maze: 'Maze', cell_fill=None):
         rows, cols = maze.rows, maze.cols
         empty_graph = Graph()
         for row in range(rows):
@@ -52,7 +52,7 @@ class MazeDisplay:
     def display_graph(self, rows: int, cols: int, graph: 'Graph', cell_fill: str = None):
         self.adjust_cell_size((rows, cols))
         self.adjust_starting_coords((rows, cols))
-        
+
         if cell_fill is None:
             cell_fill = self.cell_color
 
@@ -81,11 +81,11 @@ class MazeDisplay:
                 self.canvas.create_line(x + self.cell_size, y, x + self.cell_size, y + self.cell_size,
                                         fill=self.wall_color,
                                         width=self.outline_width)  # East wall
-        
+
         # Draw borders
         x = self.starting_coords[0]
         y = self.starting_coords[1]
-        
+
         self.canvas.create_line(x, y, x + self.cell_size * rows, y, fill=self.wall_color,
                                 width=self.outline_width)  # North wall
         self.canvas.create_line(x, y, x, y + self.cell_size * cols, fill=self.wall_color,
@@ -102,21 +102,22 @@ class MazeDisplay:
         y = (row * self.cell_size) + self.starting_coords[1]
 
         offset = self.outline_width
-        
-        self.canvas.create_rectangle(x + offset, y + offset, x + self.cell_size - offset, y + self.cell_size - offset, outline=color,
+
+        self.canvas.create_rectangle(x + offset, y + offset, x + self.cell_size - offset, y + self.cell_size - offset,
+                                     outline=color,
                                      width=self.outline_width,
                                      fill=color)
-    
+
     def display_path(self, nodes: list['Node'], path_color: str, start_color: str, end_color: str):
         for index, node in enumerate(nodes):
             row, col = node.position
-            
+
             color = path_color
             if index == 0:
                 color = start_color
             elif index == len(nodes) - 1:
                 color = end_color
-                
+
             self.display_cell(row, col, color)
 
     def draw_walls(self, x: int, y: int, directions: list[str], remove: bool):
@@ -164,4 +165,3 @@ class MazeDisplay:
 
         self.draw_walls(x_u, y_u, [wall_remove_u], remove)
         self.draw_walls(x_v, y_v, [wall_remove_v], remove)
-        

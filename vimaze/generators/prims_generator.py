@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 from vimaze.ds.indexed_set import IndexedSet
 
 if TYPE_CHECKING:
-    from vimaze.graph import Node
-    from vimaze.graph import Graph
-    from vimaze.maze_animator import MazeAnimator
+    from vimaze.ds.graph import Node
+    from vimaze.ds.graph import Graph
+    from vimaze.animator import MazeAnimator
     from vimaze.timer import Timer
 
 
@@ -58,14 +58,14 @@ class PrimsGenerator:
             self.animator.add_step_edge(
                 [self.graph.nodes[selected_frontier_cell_name], self.graph.nodes[selected_maze_cell_name]],
                 'node_connect')
-            
+
             self.update_frontier_cells(self.graph.nodes[selected_frontier_cell_name])
 
             self.visited_names.add(selected_frontier_cell_name)
             self.animator.add_step_cell(self.graph.nodes[selected_frontier_cell_name], 'visited_update')
 
         self.timer.stop()
-        
+
         return self.graph
 
     def update_frontier_cells(self, node: 'Node'):

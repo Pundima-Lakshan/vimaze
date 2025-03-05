@@ -175,7 +175,6 @@ class SolverApp:
     def handle_button_click(self, command):
         """Handle button click events."""
         logging.debug(f"Button clicked: {command}")
-        # Add your logic here based on the command
 
         if command == "gen_display_algo_maze":
             self.gen_display_algo_maze()
@@ -185,16 +184,14 @@ class SolverApp:
             self.stop_animation()
         elif command == 'solve_maze':
             self.solve_display_maze()
-        
+
     def handle_slider_change(self, command, value):
         """Handle slider value changes."""
         logging.debug(f"Slider changed: {command} = {value}")
-        # Add your logic here based on the command
 
     def handle_dropdown_change(self, command, value):
         """Handle dropdown value changes."""
         logging.debug(f"Dropdown changed: {command} = {value}")
-        # Add your logic here based on the command
 
         if command == "set_maze_gen_algorithm":
             self.set_maze_gen_algorithm(value)
@@ -205,19 +202,16 @@ class SolverApp:
 
     def set_maze_gen_algorithm(self, value):
         logging.debug(f"Setting maze generation algorithm to: {value}")
-        # Add your logic here
 
         self.maze.set_maze_gen_algorithm(value)
 
     def set_maze_solving_algorithm(self, value):
         logging.debug(f"Setting maze solving algorithm to: {value}")
-        # Add your logic here
 
         self.maze.set_maze_solving_algorithm(value)
 
     def gen_display_algo_maze(self):
         logging.debug(f"Generating maze: {int(self.maze_rows_str.get()), int(self.maze_cols_str.get())}")
-        # Add your logic here
 
         self.maze.gen_algo_maze(int(self.maze_rows_str.get()), int(self.maze_cols_str.get()))
         self.maze_canvas.delete("all")
@@ -225,23 +219,20 @@ class SolverApp:
 
     def animate_last_action(self):
         logging.debug(f"Animation last action")
-        # Add your logic here
 
         self.maze.animator.animate(int(self.animation_speed_str.get()))
 
     def stop_animation(self):
         logging.debug(f"Animation last action")
-        # Add your logic here
 
         self.maze.animator.stop_animation()
 
     def solve_display_maze(self):
         logging.debug(f"Start solving maze")
-        # Add your logic here
-        
+
         start_pos = tuple(int(x) for x in self.maze_start_pos_str.get().split(", "))
         end_pos = tuple(int(x) for x in self.maze_end_pos_str.get().split(", "))
-                        
+
         self.maze.solve_maze((start_pos[0], start_pos[1]), (end_pos[0], end_pos[1]))
         self.maze.display_maze()
         self.maze.display_path(self.maze.solver.solved_path)

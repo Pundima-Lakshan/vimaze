@@ -1,12 +1,12 @@
 import logging
 from typing import TYPE_CHECKING
 
+from vimaze.ds.graph import Graph
 from vimaze.generators.prims_generator import PrimsGenerator
-from vimaze.graph import Graph
 
 if TYPE_CHECKING:
-    from vimaze.maze_animator import MazeAnimator
-    from vimaze.graph import Node
+    from vimaze.animator import MazeAnimator
+    from vimaze.ds.graph import Node
     from vimaze.timer import Timer
 
 

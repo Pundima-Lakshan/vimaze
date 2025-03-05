@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Optional
 from vimaze.ds.indexed_set import IndexedSet
 
 if TYPE_CHECKING:
-    from vimaze.graph import Graph
-    from vimaze.maze_animator import MazeAnimator
+    from vimaze.ds.graph import Graph
+    from vimaze.animator import MazeAnimator
     from vimaze.timer import Timer
 
 
@@ -43,10 +43,10 @@ class BfsSolver:
             for neighbour in self.graph.nodes[curr_name].neighbors:
                 if not visited_names.lookup(neighbour.name):
                     visited_names.add(neighbour.name)
-                    
+
                     names_queue.append(neighbour.name)
                     self.animator.add_step_cell(self.graph.nodes[neighbour.name], 'queue_append')
-                    
+
                     path_names_map[neighbour.name] = curr_name
 
         path_names_array: list[str] = [self.graph.get_node(end_pos).name]
