@@ -15,25 +15,6 @@ class DijkstraSolver:
         self.animator = animator
         self.timer = timer
 
-    # Pseudocode
-    # 
-    # Initialize path mapping
-    # Create a priority queue 'pq' to store nodes being processed
-    # Create an array 'dist' to store the distances from source to every node
-    # Initialize that with infinity
-    # 
-    # Add source to priority queue with distance 0
-    # Update 'dist' array with source value
-    # Add source to path map with None parent
-    # 
-    # While 'pq' is not empty
-    #   Get the distance 'd' and node 'x' with the least distance (pop from pq)
-    #   For adjacent node 'an' of 'x' neighbours:
-    #       if dist[an] is greater than dist[x] + weight(x, an)
-    #           dist[an] = dist[x] + weight(x, an)
-    #           add 'an' to path map with parent 'x'
-    #           add this new combination to 'pq' because it is more efficient to add new one instead of updating
-
     def solve(self, start_pos: tuple[int, int], end_pos: tuple[int, int]):
         self.animator.start_recording('solving', 'dijkstra')
         self.timer.start('solving', 'dijkstra')

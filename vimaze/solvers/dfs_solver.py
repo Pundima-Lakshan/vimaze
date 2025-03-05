@@ -16,30 +16,6 @@ class DfsSolver:
         self.animator = animator
         self.timer = timer
 
-    # Pseudocode
-    # 
-    # Search
-    # Initialize stack
-    # Initialize visited list
-    # Initialize path map
-    # Put the starting node to visited list and stack
-    # While stack is not empty
-    #   Get unvisited adjacent nodes 'an' of node at top of stack 's'
-    #   If length of 'an' is 0
-    #       Mark 's' as fully visited
-    #       Pop 's'
-    #   Else
-    #       Put 'a' element from 'an' to stack
-    #       Mark 'a' as visited
-    #       If 'a' is end node
-    #           break
-    # 
-    # Backtrack
-    # Initialize path array 'p'
-    # Put end node 'e' to it
-    # While parent of last element in 'p' is not None
-    #   Put that parent to path array
-
     def solve(self, start_pos: tuple[int, int], end_pos: tuple[int, int]):
         self.animator.start_recording('solving', 'dfs')
         self.timer.start('solving', 'dfs')
