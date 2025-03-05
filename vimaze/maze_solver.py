@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from vimaze.solvers.astar_solver import AStarSolver
 from vimaze.solvers.bfs_solver import BfsSolver
 from vimaze.solvers.dfs_solver import DfsSolver
 
@@ -35,6 +36,12 @@ class MazeSolver:
 
         elif algorithm == "BFS":
             solver = BfsSolver(self.graph, self.animator, self.timer)
+            path_names_array = solver.solve(start_pos, end_pos)
+
+            self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
+
+        elif algorithm == "ASTAR":
+            solver = AStarSolver(self.graph, self.animator, self.timer)
             path_names_array = solver.solve(start_pos, end_pos)
 
             self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
