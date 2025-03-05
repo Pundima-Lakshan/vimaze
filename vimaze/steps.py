@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from vimaze.graph import Node
+    from vimaze.ds.graph import Node
 
 
 class Step:
@@ -23,7 +23,7 @@ class Steps:
     def add_step(self, step: Step):
         self.steps.append(step)
         self.add_action(step.action)
-    
+
     def clear_steps(self):
         self.steps.clear()
         self.actions_map.clear()

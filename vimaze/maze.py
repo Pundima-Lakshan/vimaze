@@ -2,16 +2,16 @@ from typing import Optional, TYPE_CHECKING
 
 from customtkinter import CTkCanvas
 
+from vimaze.animator import MazeAnimator
 from vimaze.configs import maze_animator_options
-from vimaze.maze_animator import MazeAnimator
-from vimaze.maze_display import MazeDisplay
-from vimaze.maze_graph_generator import MazeGraphGenerator
-from vimaze.maze_solver import MazeSolver
+from vimaze.display import MazeDisplay
+from vimaze.generator import MazeGraphGenerator
+from vimaze.solver import MazeSolver
 from vimaze.timer import Timer
 
 if TYPE_CHECKING:
-    from vimaze.graph import Graph
-    from vimaze.graph import Node
+    from vimaze.ds.graph import Graph
+    from vimaze.ds.graph import Node
     from vimaze.app import SolverApp
 
 
