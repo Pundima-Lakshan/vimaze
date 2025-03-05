@@ -1,19 +1,45 @@
 import heapq
-from typing import TYPE_CHECKING, Optional, List, Tuple
+import sys
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from vimaze.ds.graph import Graph
     from vimaze.animator import MazeAnimator
     from vimaze.timer import Timer
 
+    # A * Search Algorithm
+    # 1.Initialize the open list
+    # 2.Initialize the closed list put the starting node on the open list (you can leave its f at zero)
+    # 3.while the open list is not empty
+    #     a) find the node with the least f on
+    #         the open list, call it "q"
+    #         b) pop q off the open list
+    #         c) generate q's 8 successors and set their parents to q
+    #         d) for each successor
+    #             i) if successor is the goal, stop search
+    #
+    #             ii) else, compute both g and h for successor
+    #
+    #             successor.g = q.g + distance between successor and q
+    #             successor.h = distance from goal to successor (This can be done using many
+    #             ways, we will discuss three heuristics- Manhattan, Diagonal and Euclidean Heuristics)
+    #
+    #             successor.f = successor.g + successor.h
+    #
+    #             iii) if a node with the same position as successor is in the OPEN list which has a
+    #             lower f than successor, skip this successor
+    #
+    #             iV) if a node with the same position as successor is in the CLOSED list which has
+    #             a lower f than successor, skip this successor otherwise, add  the node to the open list
+    #             end ( for loop)
+    #
+    #         e) push q on the closed list
+    #         end (while loop)
 
-class Cell:
-    def __init__(self):
-        self.parent_i = 0  # Parent cell's row index
-        self.parent_j = 0  # Parent cell's column index
-        self.f = float('inf')  # Total cost of the cell (g + h)
-        self.g = float('inf')  # Cost from start to this cell
-        self.h = 0  # Heuristic cost from this cell to destination
+
+def heuristic(node_pos: tuple[int, int], goal_pos: tuple[int, int]) -> int:
+    """Calculate the Manhattan distance heuristic."""
+    return abs(node_pos[0] - goal_pos[0]) + abs(node_pos[1] - goal_pos[1])
 
 
 class AStarSolver:
@@ -22,95 +48,65 @@ class AStarSolver:
         self.animator = animator
         self.timer = timer
 
-    def calculate_h_value(self, row: int, col: int, dest: Tuple[int, int]) -> float:
-        return ((row - dest[0]) ** 2 + (col - dest[1]) ** 2) ** 0.5
+    def solve(self, start_pos: tuple[int, int], end_pos: tuple[int, int]):
+        self.animator.start_recording('solving', 'astar')
+        self.timer.start('solving', 'astar')
 
-    def is_valid(self, row: int, col: int) -> bool:
-        return 0 <= row < len(self.graph.grid) and 0 <= col < len(self.graph.grid[0])
-
-    def is_unblocked(self, row: int, col: int) -> bool:
-        return self.graph.get_node((row, col)).is_unblocked()
-
-    def is_destination(self, row: int, col: Tuple[int, int]) -> bool:
-        return (row, col) == self.graph.dest
-
-    def trace_path(self, cell_details: List[List[Cell]], dest: Tuple[int, int]):
-        path = []
-        row, col = dest
-
-        while not (cell_details[row][col].parent_i == row and cell_details[row][col].parent_j == col):
-            path.append((row, col))
-            temp_row = cell_details[row][col].parent_i
-            temp_col = cell_details[row][col].parent_j
-            row, col = temp_row, temp_col
-
-        path.append((row, col))
-        path.reverse()
-
-        for step in path:
-            self.animator.add_step_cell(self.graph.get_node(step), 'backtrack_path')
-
-    def a_star_search(self, start_pos: Tuple[int, int], end_pos: Tuple[int, int]):
-        if not self.is_valid(start_pos[0], start_pos[1]) or not self.is_valid(end_pos[0], end_pos[1]):
-            print("Source or destination is invalid")
-            return
-
-        if not self.is_unblocked(start_pos[0], start_pos[1]) or not self.is_unblocked(end_pos[0], end_pos[1]):
-            print("Source or the destination is blocked")
-            return
-
-        if self.is_destination(start_pos[0], start_pos[1], end_pos):
-            print("We are already at the destination")
-            return
-
-        closed_list = [[False for _ in range(len(self.graph.grid[0]))] for _ in range(len(self.graph.grid))]
-        cell_details = [[Cell() for _ in range(len(self.graph.grid[0]))] for _ in range(len(self.graph.grid))]
-
-        i, j = start_pos
-        cell_details[i][j].f = 0
-        cell_details[i][j].g = 0
-        cell_details[i][j].h = 0
-        cell_details[i][j].parent_i = i
-        cell_details[i][j].parent_j = j
-
+        # Initialize open list (priority queue) and closed list
         open_list = []
-        heapq.heappush(open_list, (0.0, i, j))
+        closed_list = set()
+
+        # Initialize g, h, and f scores
+        g_scores = {node.name: sys.maxsize for node in self.graph.nodes.values()}
+        f_scores = {node.name: sys.maxsize for node in self.graph.nodes.values()}
+
+        # Start node
+        start_node = self.graph.get_node(start_pos)
+        g_scores[start_node.name] = 0
+        f_scores[start_node.name] = heuristic(start_pos, end_pos)
+
+        # Push start node to the open list
+        heapq.heappush(open_list, (f_scores[start_node.name], start_node.name))
+        self.animator.add_step_cell(start_node, 'search_start_node')
+
+        # Path reconstruction map
+        came_from = {start_node.name: None}
 
         while open_list:
-            p = heapq.heappop(open_list)
-            i, j = p[1], p[2]
-            closed_list[i][j] = True
-            self.animator.add_step_cell(self.graph.get_node((i, j)), 'pq_pop')
+            # Get the node with the least f score
+            current_f, current_name = heapq.heappop(open_list)
+            current_node = self.graph.nodes[current_name]
 
-            directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-            for dir in directions:
-                new_i, new_j = i + dir[0], j + dir[1]
+            if current_name == self.graph.get_node(end_pos).name:
+                # Reconstruct path
+                path = []
+                node_name = current_name
+                while node_name is not None:
+                    path.append(node_name)
+                    node_name = came_from[node_name]
+                path.reverse()
+                self.animator.add_step_cell(current_node, 'search_end_node')
+                self.timer.stop()
+                return path
 
-                if self.is_valid(new_i, new_j) and self.is_unblocked(new_i, new_j) and not closed_list[new_i][new_j]:
-                    if self.is_destination(new_i, new_j, end_pos):
-                        cell_details[new_i][new_j].parent_i = i
-                        cell_details[new_i][new_j].parent_j = j
-                        self.animator.add_step_cell(self.graph.get_node((new_i, new_j)), 'search_end_node')
-                        self.trace_path(cell_details, end_pos)
-                        return
+            closed_list.add(current_name)
+            # self.animator.add_step_cell(current_node, 'pq_pop')
 
-                    g_new = cell_details[i][j].g + 1.0
-                    h_new = self.calculate_h_value(new_i, new_j, end_pos)
-                    f_new = g_new + h_new
+            for neighbor in current_node.neighbors:
+                if neighbor.name in closed_list:
+                    continue
 
-                    if cell_details[new_i][new_j].f == float('inf') or cell_details[new_i][new_j].f > f_new:
-                        heapq.heappush(open_list, (f_new, new_i, new_j))
-                        cell_details[new_i][new_j].f = f_new
-                        cell_details[new_i][new_j].g = g_new
-                        cell_details[new_i][new_j].h = h_new
-                        cell_details[new_i][new_j].parent_i = i
-                        cell_details[new_i][new_j].parent_j = j
-                        self.animator.add_step_cell(self.graph.get_node((new_i, new_j)), 'pq_push')
+                tentative_g_score = g_scores[current_name] + 1  # Assuming uniform cost
 
-        print("Failed to find the destination cell")
+                if neighbor.name not in [name for (_, name) in open_list]:
+                    heapq.heappush(open_list, (tentative_g_score + heuristic(neighbor.position, end_pos), neighbor.name))
+                elif tentative_g_score >= g_scores[neighbor.name]:
+                    continue
 
-    def solve(self, start_pos: Tuple[int, int], end_pos: Tuple[int, int]):
-        self.animator.start_recording('solving', 'A*')
-        self.timer.start('solving', 'A*')
-        self.a_star_search(start_pos, end_pos)
+                came_from[neighbor.name] = current_name
+                g_scores[neighbor.name] = tentative_g_score
+                f_scores[neighbor.name] = tentative_g_score + heuristic(neighbor.position, end_pos)
+                self.animator.add_step_cell(neighbor, 'add_neighbour')
+
         self.timer.stop()
+        return []  # No path found

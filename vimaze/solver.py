@@ -41,6 +41,12 @@ class MazeSolver:
 
             self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
 
+        elif algorithm == "Astar":
+            solver = AStarSolver(self.graph, self.animator, self.timer)
+            path_names_array = solver.solve(start_pos, end_pos)
+
+            self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
+
         elif algorithm == "Dijkstra":
             solver = DijkstraSolver(self.graph, self.animator, self.timer)
             path_names_array = solver.solve(start_pos, end_pos)
@@ -49,8 +55,4 @@ class MazeSolver:
 
         self.solved_path.reverse()
 
-        elif algorithm == "ASTAR":
-            solver = AStarSolver(self.graph, self.animator, self.timer)
-            path_names_array = solver.solve(start_pos, end_pos)
 
-            self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
