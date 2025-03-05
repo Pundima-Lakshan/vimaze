@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Optional
 from vimaze.ds.indexed_set import IndexedSet
 
 if TYPE_CHECKING:
-    from vimaze.graph import Graph
-    from vimaze.maze_animator import MazeAnimator
+    from vimaze.ds.graph import Graph
+    from vimaze.animator import MazeAnimator
     from vimaze.timer import Timer
 
 
@@ -26,13 +26,15 @@ class BfsSolver:
         start_node_name = self.graph.get_node(start_pos).name
         names_queue.append(start_node_name)
         visited_names.add(start_node_name)
-        self.animator.add_step_cell(self.graph.get_node(start_pos), 'search_start_node')
 
         path_names_map[start_node_name] = None
 
         while names_queue:
             curr_name = names_queue.popleft()
-            self.animator.add_step_cell(self.graph.nodes[curr_name], 'visited_update')
+            if curr_name == start_node_name:
+                self.animator.add_step_cell(self.graph.nodes[curr_name], 'search_start_node')
+            else:
+                self.animator.add_step_cell(self.graph.nodes[curr_name], 'queue_pop')
 
             if curr_name == self.graph.get_node(end_pos).name:
                 self.animator.add_step_cell(self.graph.nodes[curr_name], 'search_end_node')
@@ -41,7 +43,10 @@ class BfsSolver:
             for neighbour in self.graph.nodes[curr_name].neighbors:
                 if not visited_names.lookup(neighbour.name):
                     visited_names.add(neighbour.name)
+
                     names_queue.append(neighbour.name)
+                    self.animator.add_step_cell(self.graph.nodes[neighbour.name], 'queue_append')
+
                     path_names_map[neighbour.name] = curr_name
 
         path_names_array: list[str] = [self.graph.get_node(end_pos).name]
