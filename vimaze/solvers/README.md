@@ -63,7 +63,7 @@ efficient route by prioritizing nodes with the smallest known distance.
 
 - **Completeness:** Always finds a solution if one exists.
 - **Optimality:** Always finds the shortest path.
-- **Time Complexity:** \(O((V + E) \log V)\) using a priority queue.
+- **Time Complexity:** \(O((V + E) log V)\) using a priority queue.
 - **Space Complexity:** \(O(V + E)\), storing distances and priority queue.
 
 ## **Depth-First Search (DFS) Solver**
