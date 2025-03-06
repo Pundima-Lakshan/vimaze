@@ -62,7 +62,7 @@ class Maze:
         
         Args:
             image_path: Path to the maze image file
-            processor_type: Which processor to use ("standard" or "simple")
+            processor_type: Which processor to use ("standard", or "simple")
             invert_binary: Whether to invert the binary image
             wall_threshold: Threshold for wall detection (0-255)
             debug_mode: Whether to save debug visualizations
@@ -80,6 +80,13 @@ class Maze:
             processor.wall_threshold = wall_threshold
             processor.debug_mode = debug_mode
             processor.cell_size = cell_size
+        elif processor_type == "standard":
+            from vimaze.maze_image_processor import MazeImageProcessor
+            processor = MazeImageProcessor(self.timer)
+            # Set parameters
+            processor.wall_threshold = wall_threshold
+            processor.debug_mode = debug_mode
+            processor.adaptive_threshold = True
         else:
             from vimaze.maze_image_processor import MazeImageProcessor
             processor = MazeImageProcessor(self.timer)

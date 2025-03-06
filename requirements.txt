@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 opencv-python>=4.5.0
 numpy>=1.20.0
-customtkinter>=5.0.0
-Pillow>=8.0.0
-=======
 customtkinter==5.2.2
->>>>>>> upstream/master
+Pillow>=8.0.0

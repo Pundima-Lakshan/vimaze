@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
 class MazeImageProcessor:
     """
-    Improved maze image processor using area-based wall detection with accurate
-    cell size detection.
+    Improved maze image processor that accurately detects the cell grid
+    and represents walls as edges between cells, using enhanced cell-based analysis.
     """
     
     def __init__(self, timer: Optional['Timer'] = None):
@@ -29,8 +29,6 @@ class MazeImageProcessor:
         # Processing parameters
         self.wall_threshold = 127    # Threshold for wall detection (0-255)
         self.invert_binary = False   # Whether to invert the binary image
-        self.wall_detection_threshold_h = 0.4  # Threshold for horizontal wall detection
-        self.wall_detection_threshold_v = 0.4  # Threshold for vertical wall detection
         
     def process_image(self, image_path: str) -> Tuple['Graph', int, int]:
         """
@@ -78,13 +76,13 @@ class MazeImageProcessor:
             cv2.imwrite("debug/03_maze_area.png", maze_debug)
 
         # Step 4: Detect grid parameters (cell size and alignment)
-        path_width, wall_width = self._find_min_spacing(maze_binary)
-        cell_size = path_width + wall_width
-        rows, cols = self._calculate_grid_dimensions(maze_binary, path_width, wall_width)
+        transition, wall = self._get_sub(maze_binary)
+        rows, cols = self._calculate_grid_dimensions(maze_binary, transition, wall)
         
-        logging.debug(f"Detected grid: path_width={path_width}, wall_width={wall_width}, cell_size={cell_size}, dimensions={rows}x{cols}")
+        logging.debug(f"Detected grid: path_width={transition}, wall_width={wall}, size={rows}x{cols}")
 
         if self.debug_mode:
+            cell_size = transition + wall
             maze_debug = np.array(maze_binary, dtype=np.uint8) * 255
             grid_viz = cv2.cvtColor(maze_debug, cv2.COLOR_GRAY2BGR)
             
@@ -101,12 +99,15 @@ class MazeImageProcessor:
             
             cv2.imwrite("debug/04_grid_detection.png", grid_viz)
 
-        # Step 5: Detect walls using area-based approach
-        wall_indicators = self._detect_walls_cell_based(maze_binary, rows, cols, cell_size)
+        # Step 5: Extract cells and analyze walls using the improved method
+        cell_size = transition + wall
+        cells = self._extract_cells(maze_binary, rows, cols, cell_size)
+        wall_indicators = self._analyze_all_cells(cells, rows, cols)
         
-        # Step 6: Create graph representation from wall indicators
+        # Step 6: Create graph representation based on wall indicators
         graph = self._create_graph_from_wall_indicators(rows, cols, wall_indicators)
 
+        # Visualize the walls and graph if in debug mode
         if self.debug_mode:
             self._visualize_walls(wall_indicators, rows, cols)
             self._visualize_maze_graph(graph, rows, cols)
@@ -177,8 +178,7 @@ class MazeImageProcessor:
     
     def _get_maze(self, pixel_matrix, binary_image, start, end):
         """
-        Extract the maze area from the binary image based on start and end points,
-        preserving the original orientation.
+        Extract the maze area from the binary image based on start and end points.
         
         Args:
             pixel_matrix: Binary image pixel matrix
@@ -199,23 +199,15 @@ class MazeImageProcessor:
             indexNorth, indexWest = start
             indexSout, indexEast = end
         
-        # Calculate dimensions and create maze matrix with CORRECT orientation
-        # In PIL, coordinates are (x,y) = (width, height) order
-        # In NumPy arrays, dimensions are (height, width) order
-        h = indexEast - indexWest + 1  # Height (j dimension)
-        w = indexSout - indexNorth + 1  # Width (i dimension)
+        # Calculate dimensions and create maze matrix
+        w, h = indexSout - indexNorth + 1, indexEast - indexWest + 1
+        maze = np.zeros((w, h), dtype=np.uint8)
         
-        # Create the maze with proper dimensions (height, width)
-        maze = np.zeros((h, w), dtype=np.uint8)
-        
-        # Fill maze matrix preserving original orientation
+        # Fill maze matrix with pixel values
         for i in range(indexNorth, indexSout + 1):
             for j in range(indexWest, indexEast + 1):
                 if 0 <= i < width and 0 <= j < height:
-                    # Map to the correct position in the maze array
-                    # j-indexWest gives the row (y coordinate in numpy)
-                    # i-indexNorth gives the column (x coordinate in numpy)
-                    maze[j - indexWest, i - indexNorth] = pixel_matrix[i, j]
+                    maze[i - indexNorth, j - indexWest] = pixel_matrix[i, j]
         
         return maze
     
@@ -317,6 +309,7 @@ class MazeImageProcessor:
         # Calculate most common space width (path width)
         if horizontal_spaces and vertical_spaces:
             # Create histograms using Counter to find the most common values
+            from collections import Counter
             h_counter = Counter(horizontal_spaces)
             v_counter = Counter(vertical_spaces)
             
@@ -339,6 +332,7 @@ class MazeImageProcessor:
         
         # Calculate most common wall width using the same approach
         if horizontal_walls and vertical_walls:
+            from collections import Counter
             h_counter = Counter(horizontal_walls)
             v_counter = Counter(vertical_walls)
             
@@ -361,15 +355,26 @@ class MazeImageProcessor:
         path_width = max(1, path_width)
         wall_width = max(1, wall_width)
         
-        if self.debug_mode:
-            logging.debug(f"Detected path width: {path_width}, wall width: {wall_width}")
-            if 'h_common' in locals() and 'v_common' in locals():
-                logging.debug(f"Horizontal spaces: {h_common}")
-                logging.debug(f"Vertical spaces: {v_common}")
-                logging.debug(f"Horizontal walls: {h_common}")
-                logging.debug(f"Vertical walls: {v_common}")
+        logging.debug(f"Detected path width: {path_width}, wall width: {wall_width}")
+        logging.debug(f"Horizontal spaces: {h_common if 'h_common' in locals() else []}")
+        logging.debug(f"Vertical spaces: {v_common if 'v_common' in locals() else []}")
+        logging.debug(f"Horizontal walls: {h_common if 'h_common' in locals() else []}")
+        logging.debug(f"Vertical walls: {v_common if 'v_common' in locals() else []}")
         
         return path_width, wall_width
+
+    def _get_sub(self, maze):
+        """
+        Detect the wall and path widths using improved minimum spacing algorithm.
+        
+        Args:
+            maze: Binary maze matrix (0=wall, 1=path)
+            
+        Returns:
+            Tuple of (transition_width, wall_width)
+        """
+        # Use the improved spacing detection algorithm
+        return self._find_min_spacing(maze)
     
     def _calculate_grid_dimensions(self, maze_matrix, transition, wall):
         """
@@ -383,7 +388,6 @@ class MazeImageProcessor:
         Returns:
             Tuple of (rows, cols)
         """
-        # In NumPy arrays, shape[0] is height (rows) and shape[1] is width (columns)
         height, width = maze_matrix.shape
         cell_size = transition + wall
         
@@ -391,198 +395,163 @@ class MazeImageProcessor:
         rows = height // cell_size
         cols = width // cell_size
         
-        # Log dimensions for debugging
-        if self.debug_mode:
-            logging.debug(f"Maze matrix shape: {maze_matrix.shape}")
-            logging.debug(f"Cell size: {cell_size}")
-            logging.debug(f"Calculated grid dimensions: {rows}x{cols}")
-        
         # Ensure we have at least one row and column
         rows = max(1, rows)
         cols = max(1, cols)
         
         return rows, cols
     
-    def _detect_walls_cell_based(self, maze_binary, rows, cols, cell_size):
+    def _extract_cells(self, maze_img: np.ndarray, rows: int, cols: int, cell_size: int) -> List[List[np.ndarray]]:
         """
-        Detect walls by analyzing entire cells for wall segments and determining
-        which edges the walls are closest to.
+        Extract individual cells from the maze.
         
         Args:
-            maze_binary: Binary maze image (0=wall, 1=path)
+            maze_img: Binary image of the maze
             rows: Number of rows
             cols: Number of columns
-            cell_size: Size of each cell
+            cell_size: Size of each cell in pixels
+            
+        Returns:
+            2D list of cell images
+        """
+        h, w = maze_img.shape
+        
+        cells = []
+        for i in range(rows):
+            row = []
+            for j in range(cols):
+                # Calculate cell boundaries
+                y_start = i * cell_size
+                y_end = min((i+1) * cell_size, h)
+                x_start = j * cell_size
+                x_end = min((j+1) * cell_size, w)
+                
+                # Extract cell
+                if y_start < h and x_start < w:
+                    cell = maze_img[y_start:y_end, x_start:x_end]
+                    row.append(cell)
+                else:
+                    # Create empty cell if out of bounds
+                    row.append(np.zeros((cell_size, cell_size), dtype=np.uint8))
+            cells.append(row)
+        
+        return cells
+
+    def _analyze_cell_walls(self, cell: np.ndarray, row: int, col: int, rows: int, cols: int) -> List[int]:
+        """
+        Analyze a cell to detect which walls are present.
+        
+        Args:
+            cell: Cell image
+            row: Row index
+            col: Column index
+            rows: Number of rows
+            cols: Number of columns
+            
+        Returns:
+            List of wall indicators [top, right, bottom, left] (1=wall, 0=no wall)
+        """
+        h, w = cell.shape
+        
+        # Define narrow regions along each edge to check for walls
+        wall_thickness = max(2, min(h, w) // 5)  # Adjust based on cell size
+        threshold_percentage = 0.4  # Percentage of wall pixels needed to identify a wall
+        
+        # Check top wall
+        top_region = cell[0:wall_thickness, :]
+        top_wall = 1 if np.sum(top_region == 0) / top_region.size > threshold_percentage else 0
+        
+        # Check right wall
+        right_region = cell[:, w-wall_thickness:w] if w > wall_thickness else cell
+        right_wall = 1 if np.sum(right_region == 0) / right_region.size > threshold_percentage else 0
+        
+        # Check bottom wall
+        bottom_region = cell[h-wall_thickness:h, :] if h > wall_thickness else cell
+        bottom_wall = 1 if np.sum(bottom_region == 0) / bottom_region.size > threshold_percentage else 0
+        
+        # Check left wall
+        left_region = cell[:, 0:wall_thickness]
+        left_wall = 1 if np.sum(left_region == 0) / left_region.size > threshold_percentage else 0
+        
+        # Special handling for edge cells - outer boundary should always have walls
+        if row == 0:  # Top row
+            top_wall = 1
+        if col == cols - 1:  # Rightmost column
+            right_wall = 1
+        if row == rows - 1:  # Bottom row
+            bottom_wall = 1
+        if col == 0:  # Leftmost column
+            left_wall = 1
+        
+        return [top_wall, right_wall, bottom_wall, left_wall]
+    
+    def _analyze_all_cells(self, cells: List[List[np.ndarray]], rows: int, cols: int) -> List[List[List[int]]]:
+        """
+        Analyze all cells in the maze to detect walls.
+        
+        Args:
+            cells: 2D list of cell images
+            rows: Number of rows
+            cols: Number of columns
             
         Returns:
             3D list of wall indicators for each cell [row][col][wall_direction]
         """
-        height, width = maze_binary.shape
-        wall_indicators = [[[0, 0, 0, 0] for _ in range(cols)] for _ in range(rows)]
+        wall_indicators = []
         
-        # Debug visualizations
-        if self.debug_mode:
-            debug_img = np.zeros((height, width, 3), dtype=np.uint8)
-            # Make path white
-            debug_img[maze_binary == 1] = [255, 255, 255]
-            # Make walls gray
-            debug_img[maze_binary == 0] = [128, 128, 128]
+        for i in range(rows):
+            row_indicators = []
+            for j in range(cols):
+                cell_walls = self._analyze_cell_walls(cells[i][j], i, j, rows, cols)
+                row_indicators.append(cell_walls)
+            wall_indicators.append(row_indicators)
         
-        # First pass: analyze cells and detect walls
-        for r in range(rows):
-            for c in range(cols):
-                # Calculate cell boundaries
-                top = r * cell_size
-                left = c * cell_size
-                bottom = min((r + 1) * cell_size, height)
-                right = min((c + 1) * cell_size, width)
-                
-                # Skip if out of bounds
-                if top >= height or left >= width:
-                    continue
-                
-                # Extract cell
-                cell = maze_binary[top:bottom, left:right]
-                
-                # Add cell outline to debug visualization
-                if self.debug_mode:
-                    cv2.rectangle(debug_img, (left, top), (right, bottom), (0, 255, 0), 1)
-                
-                # Analyze horizontal walls (look for rows with many wall pixels)
-                h_wall_positions = []
-                for y in range(cell.shape[0]):
-                    # Count wall pixels in this row
-                    wall_pixels = np.sum(cell[y, :] == 0)
-                    
-                    # If row is mostly wall pixels (e.g., 70%)
-                    if wall_pixels > cell.shape[1] * 0.7:
-                        h_wall_positions.append(y)
-                
-                # Group adjacent positions (within a few pixels) to handle thick walls
-                h_walls = []
-                if h_wall_positions:
-                    current_wall = [h_wall_positions[0]]
-                    for pos in h_wall_positions[1:]:
-                        if pos - current_wall[-1] <= 3:  # Adjust threshold as needed
-                            current_wall.append(pos)
-                        else:
-                            h_walls.append(sum(current_wall) / len(current_wall))  # Average position
-                            current_wall = [pos]
-                    if current_wall:
-                        h_walls.append(sum(current_wall) / len(current_wall))  # Add last wall
-                
-                # Assign walls to top or bottom edge based on position
-                for wall_pos in h_walls:
-                    if wall_pos < cell.shape[0] / 2:
-                        wall_indicators[r][c][0] = 1  # Top wall
-                        if self.debug_mode:
-                            y_pos = int(top + wall_pos)
-                            cv2.line(debug_img, (left, y_pos), (right, y_pos), (0, 0, 255), 1)
-                    else:
-                        wall_indicators[r][c][2] = 1  # Bottom wall
-                        if self.debug_mode:
-                            y_pos = int(top + wall_pos)
-                            cv2.line(debug_img, (left, y_pos), (right, y_pos), (0, 0, 255), 1)
-                
-                # Analyze vertical walls (look for columns with many wall pixels)
-                v_wall_positions = []
-                for x in range(cell.shape[1]):
-                    # Count wall pixels in this column
-                    wall_pixels = np.sum(cell[:, x] == 0)
-                    
-                    # If column is mostly wall pixels
-                    if wall_pixels > cell.shape[0] * 0.7:
-                        v_wall_positions.append(x)
-                
-                # Group adjacent positions to handle thick walls
-                v_walls = []
-                if v_wall_positions:
-                    current_wall = [v_wall_positions[0]]
-                    for pos in v_wall_positions[1:]:
-                        if pos - current_wall[-1] <= 3:  # Adjust threshold as needed
-                            current_wall.append(pos)
-                        else:
-                            v_walls.append(sum(current_wall) / len(current_wall))  # Average position
-                            current_wall = [pos]
-                    if current_wall:
-                        v_walls.append(sum(current_wall) / len(current_wall))  # Add last wall
-                
-                # Assign walls to left or right edge based on position
-                for wall_pos in v_walls:
-                    if wall_pos < cell.shape[1] / 2:
-                        wall_indicators[r][c][3] = 1  # Left wall
-                        if self.debug_mode:
-                            x_pos = int(left + wall_pos)
-                            cv2.line(debug_img, (x_pos, top), (x_pos, bottom), (0, 0, 255), 1)
-                    else:
-                        wall_indicators[r][c][1] = 1  # Right wall
-                        if self.debug_mode:
-                            x_pos = int(left + wall_pos)
-                            cv2.line(debug_img, (x_pos, top), (x_pos, bottom), (0, 0, 255), 1)
-        
-        if self.debug_mode:
-            cv2.imwrite("debug/05a_cell_analysis.png", debug_img)
-        
-        # Second pass: ensure wall consistency between adjacent cells
-        for r in range(rows):
-            for c in range(cols):
-                # Right-left consistency
-                if c < cols - 1:
-                    if wall_indicators[r][c][1] == 1:  # Right wall
-                        wall_indicators[r][c+1][3] = 1  # Left wall for cell to the right
-                    elif wall_indicators[r][c+1][3] == 1:  # Left wall for cell to the right
-                        wall_indicators[r][c][1] = 1  # Right wall
-                
-                # Bottom-top consistency
-                if r < rows - 1:
-                    if wall_indicators[r][c][2] == 1:  # Bottom wall
-                        wall_indicators[r+1][c][0] = 1  # Top wall for cell below
-                    elif wall_indicators[r+1][c][0] == 1:  # Top wall for cell below
-                        wall_indicators[r][c][2] = 1  # Bottom wall
-        
-        # Third pass: Handle borders correctly by checking actual maze boundaries
-        # Rather than applying borders to all cells at the edges, we check if they're actually
-        # at the maze boundary first
-        
-        # Check actual maze bounds
-        actual_height = height
-        actual_width = width
-        
-        for r in range(rows):
-            for c in range(cols):
-                # Calculate cell position
-                top = r * cell_size
-                left = c * cell_size
-                
-                # Check if this cell is at a boundary
-                is_top_edge = (top == 0)
-                is_left_edge = (left == 0)
-                is_bottom_edge = (top + cell_size >= actual_height - 1)
-                is_right_edge = (left + cell_size >= actual_width - 1)
-                
-                # Apply border walls only where needed
-                if is_top_edge:
-                    wall_indicators[r][c][0] = 1  # Top wall
-                if is_right_edge:
-                    wall_indicators[r][c][1] = 1  # Right wall
-                if is_bottom_edge:
-                    wall_indicators[r][c][2] = 1  # Bottom wall
-                if is_left_edge:
-                    wall_indicators[r][c][3] = 1  # Left wall
+        # Ensure wall consistency between adjacent cells
+        self._ensure_wall_consistency(wall_indicators, rows, cols)
         
         return wall_indicators
     
-    def _create_graph_from_wall_indicators(self, rows, cols, wall_indicators):
+    def _ensure_wall_consistency(self, wall_indicators: List[List[List[int]]], rows: int, cols: int) -> None:
         """
-        Create a graph representation from wall indicators.
+        Ensure consistency of walls between adjacent cells (modifies wall_indicators in-place).
+        
+        Args:
+            wall_indicators: 3D list of wall indicators
+            rows: Number of rows
+            cols: Number of columns
+        """
+        # Fix inconsistencies
+        for i in range(rows):
+            for j in range(cols):
+                # Check right wall consistency
+                if j < cols - 1:
+                    # If cell has right wall, adjacent cell should have left wall
+                    if wall_indicators[i][j][1] == 1:
+                        wall_indicators[i][j+1][3] = 1
+                    # If adjacent cell has left wall, cell should have right wall
+                    elif wall_indicators[i][j+1][3] == 1:
+                        wall_indicators[i][j][1] = 1
+                
+                # Check bottom wall consistency
+                if i < rows - 1:
+                    # If cell has bottom wall, cell below should have top wall
+                    if wall_indicators[i][j][2] == 1:
+                        wall_indicators[i+1][j][0] = 1
+                    # If cell below has top wall, cell should have bottom wall
+                    elif wall_indicators[i+1][j][0] == 1:
+                        wall_indicators[i][j][2] = 1
+    
+    def _create_graph_from_wall_indicators(self, rows: int, cols: int, wall_indicators: List[List[List[int]]]) -> 'Graph':
+        """
+        Create a graph representation from detected wall indicators.
         
         Args:
             rows: Number of rows
             cols: Number of columns
-            wall_indicators: 3D list [row][col][wall_direction]
+            wall_indicators: 3D list of wall indicators [row][col][wall_direction]
             
         Returns:
-            Graph representation
+            Graph: Graph representation of the maze
         """
         from vimaze.ds.graph import Graph
         
@@ -590,37 +559,38 @@ class MazeImageProcessor:
         graph = Graph()
         
         # Add nodes for all cells
-        for r in range(rows):
+        for i in range(rows):
             for c in range(cols):
-                graph.add_node((r, c))
+                graph.add_node((i, c))
         
         # Add connections where there are no walls
-        for r in range(rows):
-            for c in range(cols):
-                # Check top (no top wall)
-                if r > 0 and wall_indicators[r][c][0] == 0:
-                    graph.connect_nodes((r, c), (r-1, c))
+        for i in range(rows):
+            for j in range(cols):
+                # Check all four directions
+                # Top (no top wall)
+                if i > 0 and wall_indicators[i][j][0] == 0:
+                    graph.connect_nodes((i, j), (i-1, j))
                 
-                # Check right (no right wall)
-                if c < cols - 1 and wall_indicators[r][c][1] == 0:
-                    graph.connect_nodes((r, c), (r, c+1))
+                # Right (no right wall)
+                if j < cols - 1 and wall_indicators[i][j][1] == 0:
+                    graph.connect_nodes((i, j), (i, j+1))
                 
-                # Check bottom (no bottom wall)
-                if r < rows - 1 and wall_indicators[r][c][2] == 0:
-                    graph.connect_nodes((r, c), (r+1, c))
+                # Bottom (no bottom wall)
+                if i < rows - 1 and wall_indicators[i][j][2] == 0:
+                    graph.connect_nodes((i, j), (i+1, j))
                 
-                # Check left (no left wall)
-                if c > 0 and wall_indicators[r][c][3] == 0:
-                    graph.connect_nodes((r, c), (r, c-1))
+                # Left (no left wall)
+                if j > 0 and wall_indicators[i][j][3] == 0:
+                    graph.connect_nodes((i, j), (i, j-1))
         
         return graph
-    
-    def _visualize_walls(self, wall_indicators, rows, cols):
+        
+    def _visualize_walls(self, wall_indicators: List[List[List[int]]], rows: int, cols: int) -> None:
         """
         Create a visualization of the detected walls.
         
         Args:
-            wall_indicators: 3D list of wall indicators
+            wall_indicators: 3D list of wall indicators for each cell
             rows: Number of rows
             cols: Number of columns
         """
@@ -628,11 +598,11 @@ class MazeImageProcessor:
         viz_cell_size = 50  # Size for visualization
         debug_grid = np.ones((rows * viz_cell_size, cols * viz_cell_size, 3), dtype=np.uint8) * 255
         
-        for r in range(rows):
-            for c in range(cols):
-                cell_walls = wall_indicators[r][c]
+        for i in range(rows):
+            for j in range(cols):
+                cell_walls = wall_indicators[i][j]
                 
-                cell_y, cell_x = r * viz_cell_size, c * viz_cell_size
+                cell_y, cell_x = i * viz_cell_size, j * viz_cell_size
                 # Draw the cell
                 cv2.rectangle(debug_grid, (cell_x, cell_y), (cell_x + viz_cell_size, cell_y + viz_cell_size), (200, 200, 200), 1)
                 
@@ -647,12 +617,12 @@ class MazeImageProcessor:
                     cv2.line(debug_grid, (cell_x, cell_y), (cell_x, cell_y + viz_cell_size), (0, 0, 0), 2)
                 
                 # Add labels
-                cv2.putText(debug_grid, f"{r},{c}", (cell_x + 15, cell_y + 30), 
+                cv2.putText(debug_grid, f"{i},{j}", (cell_x + 15, cell_y + 30), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (100, 100, 100), 1)
         
         cv2.imwrite("debug/05_wall_detection.png", debug_grid)
-    
-    def _visualize_maze_graph(self, graph, rows, cols):
+
+    def _visualize_maze_graph(self, graph: 'Graph', rows: int, cols: int) -> None:
         """
         Create visualizations for debugging.
         
