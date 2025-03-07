@@ -252,7 +252,7 @@ maze_animator_options = {
             'action_colors': {
                 'search_start_node': 'salmon',
                 'search_end_node': 'royal blue',
-                'add_neighbour': 'yellow',
+                'pq_push': 'yellow',
                 'pq_pop': 'white',
                 'backtrack_path': 'green yellow'
             }
