@@ -320,7 +320,7 @@ def visualize_processing_steps(image_path):
 # Example usage
 if __name__ == "__main__":
     # Preprocess the maze image
-    input_path = "premaze.jpg"  # Change to your maze image path
+    input_path = "g1.jpg"  # Change to your maze image path
     output_path = "processed_maze.jpg"
     
     # Process and save the result
