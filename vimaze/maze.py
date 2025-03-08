@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, TYPE_CHECKING
 
 from customtkinter import CTkCanvas
@@ -55,4 +56,13 @@ class Maze:
                                     maze_animator_options['solving']['defaults']['end_color'])
 
     def solve_maze(self, start_pos: tuple[int, int], end_pos: tuple[int, int]):
+        start_x, start_y = start_pos
+        end_x, end_y = end_pos
+
+        if not (0 <= start_x < self.rows and 0 <= end_x < self.rows and
+                0 <= start_y < self.rows and 0 <= end_y < self.rows):
+            logging.debug('Start and end positions are out of bound')
+            return False
+
         self.solver.solve_maze(start_pos, end_pos, self.solving_algorithm, self.graph)
+        return True
