@@ -320,7 +320,10 @@ class SolverApp:
         start_pos = tuple(int(x) for x in self.maze_start_pos_str.get().split(", "))
         end_pos = tuple(int(x) for x in self.maze_end_pos_str.get().split(", "))
 
-        self.maze.solve_maze((start_pos[0], start_pos[1]), (end_pos[0], end_pos[1]))
+        success = self.maze.solve_maze((start_pos[0], start_pos[1]), (end_pos[0], end_pos[1]))
+        if not success:
+            return
+
         self.maze_canvas.delete("all")
         self.maze.display_maze()
         self.maze.display_path(self.maze.solver.solved_path)

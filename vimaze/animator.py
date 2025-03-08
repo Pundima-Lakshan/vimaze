@@ -49,6 +49,7 @@ class MazeAnimator:
             self.displayer.reset_maze_display(self.maze, cell_fill)
         elif self.operation == 'solving':
             self.displayer.display_maze(self.maze, cell_fill)
+            self.displayer.display_start_end(self.maze.start_pos, self.maze.end_pos)
 
         self.step_index = 0  # Initialize step index
 

@@ -3,9 +3,9 @@ import sys
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from ds.graph import Graph
-    from animator import MazeAnimator
-    from timer import Timer
+    from vimaze.ds.graph import Graph
+    from vimaze.animator import MazeAnimator
+    from vimaze.timer import Timer
 
 
 class AStarSolver:
@@ -72,16 +72,12 @@ class AStarSolver:
         current_name = end_node.name
         while current_name is not None:
             path_names_array.append(current_name)
+            self.animator.add_step_cell(self.graph.nodes[current_name], 'backtrack_path')
             current_name = came_from.get(current_name, None)
 
-        if not path_names_array or path_names_array[-1] != start_node.name:
-            path_names_array = []
-        else:
-            path_names_array.reverse()
-            for node_name in path_names_array:
-                self.animator.add_step_cell(self.graph.nodes[node_name], 'backtrack_path')
-            self.animator.add_step_cell(start_node, 'search_start_node')
-            self.animator.add_step_cell(end_node, 'search_end_node')
+        self.animator.add_step_cell(start_node, 'search_start_node')
+        self.animator.add_step_cell(end_node, 'search_end_node')
 
         self.timer.stop()
+
         return path_names_array

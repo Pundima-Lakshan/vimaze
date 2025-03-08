@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from vimaze.configs import maze_display_options
+from vimaze.configs import maze_display_options, maze_animator_options
 from vimaze.ds.graph import Graph
 
 if TYPE_CHECKING:
@@ -96,6 +96,13 @@ class MazeDisplay:
         self.canvas.create_line(x + self.cell_size * cols, y, x + self.cell_size * cols, y + self.cell_size * rows,
                                 fill=self.wall_color,
                                 width=self.outline_width)
+        
+    def display_start_end(self, start_pos: tuple[int, int], end_pos: tuple[int, int]):
+        row, col = start_pos
+        self.display_cell(row, col, maze_animator_options['solving']['defaults']['start_color'])
+        
+        row, col = end_pos
+        self.display_cell(row, col, maze_animator_options['solving']['defaults']['end_color'])
 
     def display_cell(self, row: int, col: int, color: str):
         x = (col * self.cell_size) + self.starting_coords[0]
