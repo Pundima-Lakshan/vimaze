@@ -85,7 +85,7 @@ solver_app_options = {
                         {
                             'type': 'dropdown',
                             'label': 'Algorithm',
-                            'values': ['DFS', 'BFS', 'Dijkstra'],
+                            'values': ['DFS', 'BFS', 'Dijkstra', 'Astar'],
                             'default_value': '',
                             'command': 'set_maze_solving_algorithm'
                         },
@@ -283,6 +283,16 @@ maze_animator_options = {
                 'pq_pop': 'white',
                 'backtrack_path': 'green yellow'
             }
+        },
+        'astar': {
+            'action_colors': {
+                'search_start_node': 'salmon',
+                'search_end_node': 'royal blue',
+                'pq_push': 'yellow',
+                'pq_pop': 'white',
+                'backtrack_path': 'green yellow'
+            }
         }
     }
 }
+
