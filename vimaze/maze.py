@@ -29,6 +29,9 @@ class Maze:
 
         self.cols: Optional[int] = None
         self.rows: Optional[int] = None
+        
+        self.start_pos: Optional[tuple[int, int]] = None
+        self.end_pos: Optional[tuple[int, int]] = None
 
         self.timer = Timer(self)
         self.displayer = MazeDisplay(self.maze_canvas)
@@ -47,8 +50,10 @@ class Maze:
     def set_maze_solving_algorithm(self, value: str):
         self.solving_algorithm = value
 
-    def display_maze(self):
+    def display_maze(self, start_pos: Optional[tuple[int, int]] = None, end_pos: Optional[tuple[int, int]] = None):
         self.displayer.display_maze(self)
+        if start_pos is not None and end_pos is not None:
+            self.displayer.display_start_end(start_pos, end_pos)
 
     def display_path(self, nodes: list['Node']):
         self.displayer.display_path(nodes, maze_animator_options['solving']['defaults']['path_color'],
@@ -63,6 +68,9 @@ class Maze:
                 0 <= start_y < self.rows and 0 <= end_y < self.rows):
             logging.debug('Start and end positions are out of bound')
             return False
+
+        self.start_pos = start_pos
+        self.end_pos = end_pos
 
         self.solver.solve_maze(start_pos, end_pos, self.solving_algorithm, self.graph)
         return True
