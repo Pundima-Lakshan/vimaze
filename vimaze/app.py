@@ -269,7 +269,8 @@ class SolverApp:
 
             self.maze_start_pos_str.set(f"{start_pos[0]}, {start_pos[1]}")
             self.maze_end_pos_str.set(f"{end_pos[0]}, {end_pos[1]}")
-            
+
+            self.maze_canvas.delete("all")
             self.maze.display_maze(start_pos, end_pos)
 
             # Show success message
