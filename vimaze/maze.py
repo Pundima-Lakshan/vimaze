@@ -43,6 +43,68 @@ class Maze:
         self.rows = rows
         self.cols = cols
         self.graph = self.generator.generate_maze_graph(rows, cols, self.gen_algorithm)
+        
+    def init_from_image(self, image_path: str):
+        """
+        Initialize maze from an image.
+        
+        Args:
+            image_path: Path to the maze image file
+        """
+        from vimaze.maze_image_processor import MazeImageProcessor
+        # Create a processor and process the image
+        processor = MazeImageProcessor(self.timer)
+        self.graph, self.rows, self.cols = processor.process_image(image_path)
+        # Display the maze
+        self.display_maze()
+        
+    def init_from_image_with_params(self, image_path: str, processor_type: str = "standard", 
+                       invert_binary: bool = False, wall_threshold: int = 127, 
+                       debug_mode: bool = False, cell_size: int = 20):
+        """
+        Initialize maze from an image with custom parameters.
+        
+        Args:
+            image_path: Path to the maze image file
+            processor_type: Which processor to use ("standard", or "simple")
+            invert_binary: Whether to invert the binary image
+            wall_threshold: Threshold for wall detection (0-255)
+            debug_mode: Whether to save debug visualizations
+            cell_size: Size of cells (for simple processor)
+        """
+        # Log the parameters
+        print(f"Processing image: {image_path}")
+        print(f"Processor: {processor_type}")
+        print(f"Parameters: invert_binary={invert_binary}, wall_threshold={wall_threshold}, debug_mode={debug_mode}")
+        
+        if processor_type == "simple":
+            from vimaze.simple_maze_processor import SimpleMazeProcessor
+            processor = SimpleMazeProcessor(self.timer)
+            # Set parameters
+            processor.wall_threshold = wall_threshold
+            processor.debug_mode = debug_mode
+            processor.cell_size = cell_size
+        elif processor_type == "standard":
+            from vimaze.maze_image_processor import MazeImageProcessor
+            processor = MazeImageProcessor(self.timer)
+            # Set parameters
+            processor.wall_threshold = wall_threshold
+            processor.debug_mode = debug_mode
+            processor.adaptive_threshold = True
+        else:
+            from vimaze.maze_image_processor import MazeImageProcessor
+            processor = MazeImageProcessor(self.timer)
+            # Set parameters
+            processor.invert_binary = invert_binary
+            processor.wall_threshold = wall_threshold
+            processor.debug_mode = debug_mode
+        
+        # Process the image
+        self.graph, self.rows, self.cols, self.start, self.end = processor.process_image(image_path)
+        
+        # Display the maze
+        self.maze_canvas.delete("all")  # Clear existing content
+        self.display_maze()
 
     def set_maze_gen_algorithm(self, value: str):
         self.gen_algorithm = value
