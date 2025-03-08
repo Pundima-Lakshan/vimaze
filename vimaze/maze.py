@@ -7,6 +7,7 @@ from vimaze.animator import MazeAnimator
 from vimaze.configs import maze_animator_options
 from vimaze.display import MazeDisplay
 from vimaze.generator import MazeGraphGenerator
+from vimaze.image_processor import MazeImageProcessor
 from vimaze.solver import MazeSolver
 from vimaze.timer import Timer
 
@@ -44,6 +45,31 @@ class Maze:
         self.cols = cols
         self.graph = self.generator.generate_maze_graph(rows, cols, self.gen_algorithm)
 
+    def init_from_image_with_params(self, image_path: str, invert_binary: bool = False, wall_threshold: int = 127,
+                                    debug_mode: bool = False, cell_size: int = 20):
+        """
+        Initialize maze from an image with custom parameters.
+        
+        Args:
+            image_path: Path to the maze image file
+            invert_binary: Whether to invert the binary image
+            wall_threshold: Threshold for wall detection (0-255)
+            debug_mode: Whether to save debug visualizations
+            cell_size: Size of cells (for simple processor)
+        """
+        # Log the parameters
+        logging.debug(f"Processing image: {image_path}")
+        logging.debug(f"Parameters: invert_binary={invert_binary}, wall_threshold={wall_threshold}, debug_mode={debug_mode}")
+
+        processor = MazeImageProcessor(self.timer)
+        
+        processor.wall_threshold = wall_threshold
+        processor.debug_mode = debug_mode
+        processor.adaptive_threshold = True
+
+        # Process the image
+        return processor.process_image(image_path)
+
     def set_maze_gen_algorithm(self, value: str):
         self.gen_algorithm = value
 
@@ -65,7 +91,7 @@ class Maze:
         end_x, end_y = end_pos
 
         if not (0 <= start_x < self.rows and 0 <= end_x < self.rows and
-                0 <= start_y < self.rows and 0 <= end_y < self.rows):
+                0 <= start_y < self.cols and 0 <= end_y < self.cols):
             logging.debug('Start and end positions are out of bound')
             return False
 
@@ -74,3 +100,4 @@ class Maze:
 
         self.solver.solve_maze(start_pos, end_pos, self.solving_algorithm, self.graph)
         return True
+

@@ -113,9 +113,38 @@ solver_app_options = {
                     'controls': [
                         {
                             'type': 'button',
-                            'text': 'Generate Maze',
-                            'command': 'generate_maze',  # Callback function name
+                            'text': 'Select Maze Image',
+                            'command': 'select_maze_image',
                         },
+                        {
+                            'type': 'input',
+                            'key': 'image_path',
+                            'label': 'Image Path',
+                            'default_value': '',
+                        },
+                        {
+                            'type': 'input',
+                            'key': 'invert_binary',
+                            'label': 'Invert Binary (true/false)',
+                            'default_value': 'false',
+                        },
+                        {
+                            'type': 'input',
+                            'key': 'wall_threshold',
+                            'label': 'Wall Threshold (0-255)',
+                            'default_value': '127',
+                        },
+                        {
+                            'type': 'input',
+                            'key': 'cell_size',
+                            'label': 'Cell Size (Simple Processor)',
+                            'default_value': '20',
+                        },
+                        {
+                            'type': 'button',
+                            'text': 'Process Maze Image',
+                            'command': 'process_maze_image',  # Callback function name
+                        }
                     ]
                 },
             ],

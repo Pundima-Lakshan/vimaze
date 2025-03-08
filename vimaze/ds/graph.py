@@ -50,7 +50,7 @@ class Graph:
 
     def display(self):
         for node in self.nodes.values():
-            print(f"{node.name}: {[neighbor.name for neighbor in node.neighbors]}")
+            logging.debug(f"{node.name}: {[neighbor.name for neighbor in node.neighbors]}")
 
     @staticmethod
     def get_node_name(pos: tuple[int, int]):
