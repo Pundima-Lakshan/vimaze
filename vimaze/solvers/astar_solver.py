@@ -3,9 +3,9 @@ import sys
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from vimaze.ds.graph import Graph
-    from vimaze.animator import MazeAnimator
-    from vimaze.timer import Timer
+    from ds.graph import Graph
+    from animator import MazeAnimator
+    from timer import Timer
 
 
 class AStarSolver:
@@ -26,24 +26,26 @@ class AStarSolver:
         end_node = self.graph.get_node(end_pos)
 
         open_heap = []
+        open_set = set()
+        closed_set = set()
         came_from: dict[str, Optional[str]] = {}
         g_score = {node.name: sys.maxsize for node in self.graph.nodes.values()}
-
         g_score[start_node.name] = 0
+
         f_score = g_score[start_node.name] + self._heuristic(start_node.position, end_node.position)
         heapq.heappush(open_heap, (f_score, start_node.name))
+        open_set.add(start_node.name)
         self.animator.add_step_cell(start_node, 'search_start_node')
-
-        open_set = {start_node.name}
         came_from[start_node.name] = None
 
         while open_heap:
             current_f, current_name = heapq.heappop(open_heap)
+            open_set.remove(current_name)
 
-            if current_name not in open_set:
+            if current_name in closed_set:
                 continue
 
-            open_set.remove(current_name)
+            closed_set.add(current_name)
             current_node = self.graph.nodes[current_name]
 
             if current_name == end_node.name:
@@ -59,7 +61,8 @@ class AStarSolver:
                     g_score[neighbor.name] = tentative_g
                     f_score = tentative_g + self._heuristic(neighbor.position, end_node.position)
 
-                    if neighbor.name not in open_set:
+                    # Only add the neighbor to open_heap if it's not in closed_set and in open_set
+                    if neighbor.name not in closed_set and neighbor.name not in open_set:
                         heapq.heappush(open_heap, (f_score, neighbor.name))
                         open_set.add(neighbor.name)
                         self.animator.add_step_cell(neighbor, 'pq_push')
