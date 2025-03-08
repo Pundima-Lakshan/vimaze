@@ -86,14 +86,14 @@ class MazeDisplay:
         x = self.starting_coords[0]
         y = self.starting_coords[1]
 
-        self.canvas.create_line(x, y, x + self.cell_size * rows, y, fill=self.wall_color,
+        self.canvas.create_line(x, y, x + self.cell_size * cols, y, fill=self.wall_color,
                                 width=self.outline_width)  # North wall
-        self.canvas.create_line(x, y, x, y + self.cell_size * cols, fill=self.wall_color,
+        self.canvas.create_line(x, y, x, y + self.cell_size * rows, fill=self.wall_color,
                                 width=self.outline_width)  # West wall
-        self.canvas.create_line(x, y + self.cell_size * cols, x + self.cell_size * rows, y + self.cell_size * cols,
+        self.canvas.create_line(x, y + self.cell_size * rows, x + self.cell_size * cols, y + self.cell_size * rows,
                                 fill=self.wall_color,
                                 width=self.outline_width)  # South wall
-        self.canvas.create_line(x + self.cell_size * rows, y, x + self.cell_size * rows, y + self.cell_size * cols,
+        self.canvas.create_line(x + self.cell_size * cols, y, x + self.cell_size * cols, y + self.cell_size * rows,
                                 fill=self.wall_color,
                                 width=self.outline_width)
 
@@ -165,3 +165,5 @@ class MazeDisplay:
 
         self.draw_walls(x_u, y_u, [wall_remove_u], remove)
         self.draw_walls(x_v, y_v, [wall_remove_v], remove)
+        
+        
