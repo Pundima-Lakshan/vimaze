@@ -27,32 +27,29 @@ class MazeSolver:
         logging.debug(f"Solving maze with {algorithm} algorithm, {start_pos} {end_pos}")
 
         self.graph = graph
-        self.solved_path = None
+        self.solved_path = []
+
+        path_names_array = []
 
         if algorithm == "DFS":
             solver = DfsSolver(self.graph, self.animator, self.timer)
             path_names_array = solver.solve(start_pos, end_pos)
 
-            self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
-
         elif algorithm == "BFS":
             solver = BfsSolver(self.graph, self.animator, self.timer)
             path_names_array = solver.solve(start_pos, end_pos)
-
-            self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
 
         elif algorithm == "Astar":
             solver = AStarSolver(self.graph, self.animator, self.timer)
             path_names_array = solver.solve(start_pos, end_pos)
 
-            self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
-
         elif algorithm == "Dijkstra":
             solver = DijkstraSolver(self.graph, self.animator, self.timer)
             path_names_array = solver.solve(start_pos, end_pos)
 
-            self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
+        if not path_names_array or path_names_array[-1] != self.graph.get_node(start_pos).name:
+            logging.debug(f"No path found using {algorithm} algorithm, from {start_pos} to {end_pos}")
+            return
 
+        self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
         self.solved_path.reverse()
-
-

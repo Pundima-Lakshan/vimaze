@@ -259,4 +259,3 @@ maze_animator_options = {
         }
     }
 }
-
