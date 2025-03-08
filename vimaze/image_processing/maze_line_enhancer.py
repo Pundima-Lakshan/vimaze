@@ -72,7 +72,7 @@ def enhance_maze_lines(image_path, output_path=None, line_thickness=2, smoothing
     # Save the output if path is provided
     if output_path:
         cv2.imwrite(output_path, enhanced)
-        print(f"Enhanced maze saved to {output_path}")
+        logging.debug(f"Enhanced maze saved to {output_path}")
 
     return enhanced
 

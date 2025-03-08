@@ -34,7 +34,7 @@ class MazeImageProcessor:
         self.wall_detection_threshold_h = 0.4  # Threshold for horizontal wall detection
         self.wall_detection_threshold_v = 0.4  # Threshold for vertical wall detection
 
-    def process_image(self, image_path: str) -> Tuple['Graph', int, int]:
+    def process_image(self, image_path: str) -> Tuple['Graph', int, int, tuple[int, int], tuple[int, int]]:
         """
         Process a maze image and return a Graph representation along with dimensions.
         """

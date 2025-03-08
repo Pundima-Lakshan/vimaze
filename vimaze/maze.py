@@ -45,20 +45,6 @@ class Maze:
         self.cols = cols
         self.graph = self.generator.generate_maze_graph(rows, cols, self.gen_algorithm)
 
-    def init_from_image(self, image_path: str):
-        """
-        Initialize maze from an image.
-        
-        Args:
-            image_path: Path to the maze image file
-        """
-        from vimaze.image_processor import MazeImageProcessor
-        # Create a processor and process the image
-        processor = MazeImageProcessor(self.timer)
-        self.graph, self.rows, self.cols = processor.process_image(image_path)
-        # Display the maze
-        self.display_maze()
-
     def init_from_image_with_params(self, image_path: str, invert_binary: bool = False, wall_threshold: int = 127,
                                     debug_mode: bool = False, cell_size: int = 20):
         """
@@ -72,8 +58,8 @@ class Maze:
             cell_size: Size of cells (for simple processor)
         """
         # Log the parameters
-        print(f"Processing image: {image_path}")
-        print(f"Parameters: invert_binary={invert_binary}, wall_threshold={wall_threshold}, debug_mode={debug_mode}")
+        logging.debug(f"Processing image: {image_path}")
+        logging.debug(f"Parameters: invert_binary={invert_binary}, wall_threshold={wall_threshold}, debug_mode={debug_mode}")
 
         processor = MazeImageProcessor(self.timer)
         
@@ -82,11 +68,7 @@ class Maze:
         processor.adaptive_threshold = True
 
         # Process the image
-        self.graph, self.rows, self.cols, self.start, self.end = processor.process_image(image_path)
-
-        # Display the maze
-        self.maze_canvas.delete("all")  # Clear existing content
-        self.display_maze()
+        return processor.process_image(image_path)
 
     def set_maze_gen_algorithm(self, value: str):
         self.gen_algorithm = value
@@ -109,7 +91,7 @@ class Maze:
         end_x, end_y = end_pos
 
         if not (0 <= start_x < self.rows and 0 <= end_x < self.rows and
-                0 <= start_y < self.rows and 0 <= end_y < self.rows):
+                0 <= start_y < self.cols and 0 <= end_y < self.cols):
             logging.debug('Start and end positions are out of bound')
             return False
 
@@ -118,3 +100,4 @@ class Maze:
 
         self.solver.solve_maze(start_pos, end_pos, self.solving_algorithm, self.graph)
         return True
+

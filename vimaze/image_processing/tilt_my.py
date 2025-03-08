@@ -70,7 +70,7 @@ M = cv2.getPerspectiveTransform(np.array([tl, tr, br, bl], dtype="float32"), dst
 tilted_maze = cv2.warpPerspective(image, M, (max_width, max_height))
 
 # angle = rect[-1]
-# print(angle)
+# logging.debug(angle)
 # angle = angle - 50
 
 # 39 correct angle for horizontal 
@@ -79,7 +79,7 @@ tilted_maze = cv2.warpPerspective(image, M, (max_width, max_height))
 # else:
 #     angle = -angle
 
-# print("after fix: ", angle)
+# logging.debug("after fix: ", angle)
 
 # if angle < -45:
 #     angle = 90 + angle

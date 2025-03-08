@@ -256,13 +256,21 @@ class SolverApp:
             return
 
         try:
-            self.maze.init_from_image_with_params(
+            self.maze.graph, self.maze.rows, self.maze.cols, start_pos, end_pos = self.maze.init_from_image_with_params(
                 image_path,
                 invert_binary=(self.invert_binary_str.get().lower() == "true"),
                 wall_threshold=int(self.wall_threshold_str.get()) if self.wall_threshold_str.get().isdigit() else 127,
                 cell_size=int(self.cell_size_str.get()) if self.cell_size_str.get().isdigit() else 20,
                 debug_mode=self.debug_mode.get()
             )
+
+            self.maze_rows_str.set(f"{self.maze.rows}")
+            self.maze_end_pos_str.set(f"{self.maze.cols}")
+
+            self.maze_start_pos_str.set(f"{start_pos[0]}, {start_pos[1]}")
+            self.maze_end_pos_str.set(f"{end_pos[0]}, {end_pos[1]}")
+            
+            self.maze.display_maze(start_pos, end_pos)
 
             # Show success message
             messagebox.showinfo("Success", f"Maze loaded successfully. Size: {self.maze.rows}x{self.maze.cols}")

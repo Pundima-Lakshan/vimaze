@@ -102,8 +102,8 @@ def preprocess_maze(image_path, output_path=None):
     left_angle, left_points, left_line = detect_wall_angle(binary, 'left')
     right_angle, right_points, right_line = detect_wall_angle(binary, 'right')
 
-    print(f"Left wall angle: {left_angle:.2f} degrees")
-    print(f"Right wall angle: {right_angle:.2f} degrees")
+    logging.debug(f"Left wall angle: {left_angle:.2f} degrees")
+    logging.debug(f"Right wall angle: {right_angle:.2f} degrees")
 
     # Get image dimensions
     h, w = binary.shape
@@ -111,7 +111,7 @@ def preprocess_maze(image_path, output_path=None):
     # Determine the type of skew and set up appropriate correction
     if abs(left_angle) < 0.5 and abs(right_angle) < 0.5:
         # Both walls are nearly vertical - no significant skew
-        print("No significant skew detected.")
+        logging.debug("No significant skew detected.")
         corrected = binary
     else:
         # Calculate how much the top and bottom need to be adjusted
@@ -132,7 +132,7 @@ def preprocess_maze(image_path, output_path=None):
 
         if parallel_skew:
             # Parallelogram skew (left and right are roughly parallel)
-            print("Detected parallelogram skew.")
+            logging.debug("Detected parallelogram skew.")
 
             # Use average angle for correction
             avg_angle = (left_angle + right_angle) / 2
@@ -166,7 +166,7 @@ def preprocess_maze(image_path, output_path=None):
                 ], dtype=np.float32)
         else:
             # Trapezoid skew (perspective distortion)
-            print("Detected trapezoid skew.")
+            logging.debug("Detected trapezoid skew.")
 
             # Source points (current image corners)
             src_points = np.array([
@@ -222,7 +222,7 @@ def preprocess_maze(image_path, output_path=None):
     # Save the output if path is provided
     if output_path:
         cv2.imwrite(output_path, final)
-        print(f"Processed maze saved to {output_path}")
+        logging.debug(f"Processed maze saved to {output_path}")
 
     wall_info = {
         'left_angle': left_angle,

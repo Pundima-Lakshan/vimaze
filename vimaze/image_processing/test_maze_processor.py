@@ -19,16 +19,16 @@ def test_standard_processor(image_path, debug=True, invert_binary=False, wall_th
     processor.invert_binary = invert_binary
 
     try:
-        print(f"Processing maze image with standard processor: {image_path}")
-        print(f"Parameters: invert_binary={invert_binary}, wall_threshold={wall_threshold}, debug={debug}")
+        logging.debug(f"Processing maze image with standard processor: {image_path}")
+        logging.debug(f"Parameters: invert_binary={invert_binary}, wall_threshold={wall_threshold}, debug={debug}")
 
         graph, rows, cols, start, end = processor.process_image(image_path)
-        print(f"Success! Maze dimensions: {rows}x{cols}")
+        logging.debug(f"Success! Maze dimensions: {rows}x{cols}")
         return True
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print(f"Error: {str(e)}")
+        logging.debug(f"Error: {str(e)}")
         return False
 
 
@@ -50,17 +50,17 @@ processor.cell_size = cell_size
 processor.wall_threshold = wall_threshold
 
 try:
-    print(f"Processing maze image with simple processor: {image_path}")
-    print(f"Parameters: wall_threshold={wall_threshold}, cell_size={cell_size}, debug={debug}")
+    logging.debug(f"Processing maze image with simple processor: {image_path}")
+    logging.debug(f"Parameters: wall_threshold={wall_threshold}, cell_size={cell_size}, debug={debug}")
 
     graph, rows, cols = processor.process_image(image_path)
-    print(f"Success! Maze dimensions: {rows}x{cols}")
+    logging.debug(f"Success! Maze dimensions: {rows}x{cols}")
     return True
 except Exception as e:
     import traceback
 
     traceback.print_exc()
-    print(f"Error: {str(e)}")
+    logging.debug(f"Error: {str(e)}")
     return False
 
 
@@ -79,11 +79,11 @@ def main():
     args = parser.parse_args()
 
     if args.processor in ["standard", "both"]:
-        print("\n=== Testing Standard Processor ===")
+        logging.debug("\n=== Testing Standard Processor ===")
         test_standard_processor(args.image_path, args.debug, args.invert, args.wall_threshold)
 
     if args.processor in ["simple", "both"]:
-        print("\n=== Testing Simple Processor ===")
+        logging.debug("\n=== Testing Simple Processor ===")
         simple_threshold = 50 if args.wall_threshold == 127 else args.wall_threshold
         test_simple_processor(args.image_path, args.debug, simple_threshold, args.cell_size)
 
