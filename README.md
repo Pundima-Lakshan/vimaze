@@ -29,7 +29,7 @@ algorithms.
 Run the application with:
 
 ```sh
-python main.py
+python __main__.py
 ```
 
 ## Configuration

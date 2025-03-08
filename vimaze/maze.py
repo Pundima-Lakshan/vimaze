@@ -96,7 +96,7 @@ class Maze:
             processor.debug_mode = debug_mode
         
         # Process the image
-        self.graph, self.rows, self.cols = processor.process_image(image_path)
+        self.graph, self.rows, self.cols, self.start, self.end = processor.process_image(image_path)
         
         # Display the maze
         self.maze_canvas.delete("all")  # Clear existing content

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class MazeImageProcessor:
     """
     Improved maze image processor using area-based wall detection with accurate
-    cell size detection.
+    cell size detection and consistent grid offset.
     """
     
     def __init__(self, timer: Optional['Timer'] = None):
@@ -32,11 +32,23 @@ class MazeImageProcessor:
         self.wall_detection_threshold_h = 0.4  # Threshold for horizontal wall detection
         self.wall_detection_threshold_v = 0.4  # Threshold for vertical wall detection
         
-    def process_image(self, image_path: str) -> Tuple['Graph', int, int]:
+        # Grid parameters - initialized with defaults and updated during processing
+        self.cell_size = 1           # Size of each cell (path + wall)
+        self.path_width = 1          # Width of path segments
+        self.wall_width = 1          # Width of wall segments
+        self.grid_offset_y = 0       # Vertical grid offset (will be set to half wall width)
+        self.grid_offset_x = 0       # Horizontal grid offset (will be set to half wall width)
+        
+    def process_image(self, image_path: str) -> Tuple['Graph', int, int, Tuple[int, int], Tuple[int, int]]:
         """
         Process a maze image and return a Graph representation along with dimensions.
+        
+        Args:
+            image_path: Path to the maze image
+            
+        Returns:
+            Tuple of (graph, rows, cols, entry_point, exit_point)
         """
-
         if self.timer:
             self.timer.start('processing', 'image')
 
@@ -77,31 +89,24 @@ class MazeImageProcessor:
             cv2.imwrite("debug/03_maze_area.png", maze_debug)
 
         # Step 4: Detect grid parameters (cell size and alignment)
-        path_width, wall_width = self._find_min_spacing(maze_binary)
-        cell_size = path_width + wall_width
-        rows, cols = self._calculate_grid_dimensions(maze_binary, path_width, wall_width)
+        self.path_width, self.wall_width = self._find_min_spacing(maze_binary)
+        self.cell_size = self.path_width + self.wall_width
         
-        logging.debug(f"Detected grid: path_width={path_width}, wall_width={wall_width}, cell_size={cell_size}, dimensions={rows}x{cols}")
+        # Set grid offset as half of wall width - this is now fundamental to our grid system
+        self.grid_offset_y = self.wall_width // 2
+        self.grid_offset_x = self.wall_width // 2
+        
+        rows, cols = self._calculate_grid_dimensions(maze_binary)
+        
+        logging.debug(f"Detected grid: path_width={self.path_width}, wall_width={self.wall_width}, "
+                     f"cell_size={self.cell_size}, dimensions={rows}x{cols}, "
+                     f"offsets=({self.grid_offset_x}, {self.grid_offset_y})")
 
         if self.debug_mode:
-            maze_debug = np.array(maze_binary, dtype=np.uint8) * 255
-            grid_viz = cv2.cvtColor(maze_debug, cv2.COLOR_GRAY2BGR)
-            
-            # Draw detected grid
-            for r in range(rows + 1):
-                y = r * cell_size
-                if y < grid_viz.shape[0]:
-                    cv2.line(grid_viz, (0, y), (grid_viz.shape[1], y), (0, 255, 0), 1)
-            
-            for c in range(cols + 1):
-                x = c * cell_size
-                if x < grid_viz.shape[1]:
-                    cv2.line(grid_viz, (x, 0), (x, grid_viz.shape[0]), (0, 255, 0), 1)
-            
-            cv2.imwrite("debug/04_grid_detection.png", grid_viz)
+            self._visualize_offset_grid(maze_binary, rows, cols)
 
         # Step 5: Detect walls using area-based approach
-        wall_indicators = self._detect_walls_cell_based(maze_binary, rows, cols, cell_size)
+        wall_indicators = self._detect_walls_cell_based(maze_binary, rows, cols)
         
         # Step 6: Create graph representation from wall indicators
         graph = self._create_graph_from_wall_indicators(rows, cols, wall_indicators)
@@ -110,14 +115,13 @@ class MazeImageProcessor:
             self._visualize_walls(wall_indicators, rows, cols)
             self._visualize_maze_graph(graph, rows, cols)
 
+        # Step 7: After wall detection, detect entry and exit points
+        entry_point, exit_point = self._find_maze_entry_exit_points(rows, cols, wall_indicators)
+
         if self.timer:
             self.timer.stop()
 
         logging.debug(f"Maze processed successfully: {rows}x{cols} cells")
-
-        # Step 7: After wall detection, detect entry and exit points
-        entry_point, exit_point = self._find_maze_entry_exit_points(rows, cols, wall_indicators)
-
         return graph, rows, cols, entry_point, exit_point
     
     def _find_point_start(self, pixel_matrix, width, height):
@@ -373,39 +377,141 @@ class MazeImageProcessor:
         
         return path_width, wall_width
     
-    def _calculate_grid_dimensions(self, maze_matrix, transition, wall):
+    def _calculate_grid_dimensions(self, maze_matrix):
         """
-        Calculate grid dimensions based on cell size.
+        Calculate grid dimensions based on cell size and maze content.
+        Uses the grid offset fundamentally in the calculation.
         
         Args:
-            maze_matrix: Binary maze matrix
-            transition: Width of path
-            wall: Width of wall
+            maze_matrix: Binary maze image (0=wall, 1=path)
             
         Returns:
             Tuple of (rows, cols)
         """
-        # In NumPy arrays, shape[0] is height (rows) and shape[1] is width (columns)
         height, width = maze_matrix.shape
-        cell_size = transition + wall
         
-        # Calculate number of rows and columns
-        rows = height // cell_size
-        cols = width // cell_size
+        # Calculate adjusted dimensions with offset
+        adjusted_height = height - self.grid_offset_y
+        adjusted_width = width - self.grid_offset_x
         
-        # Log dimensions for debugging
-        if self.debug_mode:
-            logging.debug(f"Maze matrix shape: {maze_matrix.shape}")
-            logging.debug(f"Cell size: {cell_size}")
-            logging.debug(f"Calculated grid dimensions: {rows}x{cols}")
+        # Calculate base dimensions
+        rows = adjusted_height // self.cell_size
+        cols = adjusted_width // self.cell_size
         
-        # Ensure we have at least one row and column
-        rows = max(1, rows)
-        cols = max(1, cols)
+        # Check if the last row is significant
+        if self._check_edge_significance(maze_matrix, 'row', rows):
+            rows += 1
+        
+        # Check if the last column is significant
+        if self._check_edge_significance(maze_matrix, 'col', cols):
+            cols += 1
         
         return rows, cols
+
+    def _check_edge_significance(self, maze_matrix, edge_type, index):
+        """
+        Determine if an edge row or column contains significant maze features.
+        Uses class grid offset and cell size parameters.
+        
+        Args:
+            maze_matrix: Binary maze image (0=wall, 1=path)
+            edge_type: 'row' or 'col'
+            index: Row or column index to check
+            
+        Returns:
+            Boolean indicating if the edge is significant
+        """
+        height, width = maze_matrix.shape
+        
+        if edge_type == 'row':
+            # Calculate row boundaries with offset
+            top = self.grid_offset_y + index * self.cell_size
+            bottom = min(top + self.cell_size, height)
+            
+            # If row is too small, it's not significant
+            if (bottom - top) < (self.cell_size * 0.5):
+                return False
+            
+            # Extract row data
+            edge_data = maze_matrix[top:bottom, :]
+        else:  # column
+            # Calculate column boundaries with offset
+            left = self.grid_offset_x + index * self.cell_size
+            right = min(left + self.cell_size, width)
+            
+            # If column is too small, it's not significant
+            if (right - left) < (self.cell_size * 0.5):
+                return False
+            
+            # Extract column data
+            edge_data = maze_matrix[:, left:right]
+        
+        # Statistical analysis of the cell content
+        total_pixels = edge_data.size
+        wall_pixels = np.sum(edge_data == 0)
+        path_pixels = np.sum(edge_data == 1)
+        
+        # Define significance criteria
+        is_significant = (
+            wall_pixels > 0 and
+            path_pixels > 0 and
+            path_pixels > wall_pixels and  # Paths should outnumber walls
+            path_pixels / total_pixels >= 0.15  # At least 15% paths
+        )
+        
+        return is_significant
     
-    def _detect_walls_cell_based(self, maze_binary, rows, cols, cell_size):
+    def _visualize_offset_grid(self, maze_binary, rows, cols):
+        """
+        Create a visualization of the offset grid.
+        
+        Args:
+            maze_binary: Binary maze image (0=wall, 1=path)
+            rows: Number of rows
+            cols: Number of columns
+        """
+        height, width = maze_binary.shape
+        debug_img = np.zeros((height, width, 3), dtype=np.uint8)
+        
+        # Fill background with original maze data
+        debug_img[maze_binary == 1] = [255, 255, 255]  # Path
+        debug_img[maze_binary == 0] = [128, 128, 128]  # Wall
+        
+        # Draw the offset grid lines
+        for r in range(rows + 1):
+            y = self.grid_offset_y + r * self.cell_size
+            if y < height:
+                cv2.line(debug_img, (0, y), (width, y), (0, 255, 0), 1)
+        
+        for c in range(cols + 1):
+            x = self.grid_offset_x + c * self.cell_size
+            if x < width:
+                cv2.line(debug_img, (x, 0), (x, height), (0, 255, 0), 1)
+        
+        # Add grid cell labels
+        for r in range(rows):
+            for c in range(cols):
+                y = self.grid_offset_y + r * self.cell_size + self.cell_size // 2
+                x = self.grid_offset_x + c * self.cell_size + self.cell_size // 2
+                
+                if 0 <= y < height and 0 <= x < width:
+                    cv2.putText(debug_img, f"{r},{c}", (x - 10, y + 5), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 0, 255), 1)
+        
+        # Draw axes to show offset
+        # X-axis offset
+        cv2.line(debug_img, (0, 0), (self.grid_offset_x, 0), (255, 0, 0), 2)
+        cv2.putText(debug_img, f"X-offset: {self.grid_offset_x}", (5, 15), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+        
+        # Y-axis offset
+        cv2.line(debug_img, (0, 0), (0, self.grid_offset_y), (255, 0, 0), 2)
+        cv2.putText(debug_img, f"Y-offset: {self.grid_offset_y}", (5, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+                    
+        cv2.imwrite("debug/04_offset_grid.png", debug_img)
+    
+    def _detect_walls_cell_based(self, maze_binary, rows, cols):
         """
         Detect walls by analyzing entire cells for wall segments and determining
         which edges the walls are closest to.
@@ -414,7 +520,6 @@ class MazeImageProcessor:
             maze_binary: Binary maze image (0=wall, 1=path)
             rows: Number of rows
             cols: Number of columns
-            cell_size: Size of each cell
             
         Returns:
             3D list of wall indicators for each cell [row][col][wall_direction]
@@ -433,15 +538,34 @@ class MazeImageProcessor:
         # First pass: analyze cells and detect walls
         for r in range(rows):
             for c in range(cols):
-                # Calculate cell boundaries
-                top = r * cell_size
-                left = c * cell_size
-                bottom = min((r + 1) * cell_size, height)
-                right = min((c + 1) * cell_size, width)
+                # Calculate cell boundaries using offset
+                top = self.grid_offset_y + r * self.cell_size
+                left = self.grid_offset_x + c * self.cell_size
+                bottom = min(top + self.cell_size, height)
+                right = min(left + self.cell_size, width)
                 
                 # Skip if out of bounds
                 if top >= height or left >= width:
                     continue
+                    
+                # For edge cells, check if they're meaningful
+                if r == rows - 1 or c == cols - 1:
+                    cell_h, cell_w = bottom - top, right - left
+                    
+                    # Skip tiny edge cells or those with minimal content
+                    cell = maze_binary[top:bottom, left:right]
+                    wall_pixels = np.sum(cell == 0)
+                    path_pixels = np.sum(cell == 1)
+                    total_pixels = cell.size
+                    
+                    # If the cell doesn't have significant content or is too small
+                    if (wall_pixels / total_pixels < 0.05 or 
+                        path_pixels / total_pixels < 0.15 or
+                        cell_h < self.cell_size * 0.5 or 
+                        cell_w < self.cell_size * 0.5):
+                        # Mark all walls as present for this cell
+                        wall_indicators[r][c] = [1, 1, 1, 1]
+                        continue
                 
                 # Extract cell
                 cell = maze_binary[top:bottom, left:right]
@@ -551,7 +675,8 @@ class MazeImageProcessor:
         
         # Log the openings found
         if self.debug_mode:
-            logging.debug(f"Border openings - Top: {len(top_openings)}, Right: {len(right_openings)}, Bottom: {len(bottom_openings)}, Left: {len(left_openings)}")
+            logging.debug(f"Border openings - Top: {len(top_openings)}, Right: {len(right_openings)}, "
+                         f"Bottom: {len(bottom_openings)}, Left: {len(left_openings)}")
         
         # Fill in top border walls (preserving potential entry/exit)
         preserve_top = []
@@ -585,36 +710,13 @@ class MazeImageProcessor:
             if r not in preserve_left:
                 wall_indicators[r][0][3] = 1  # Add left wall
         
-        # Save the entry/exit points for later use if needed
-        if hasattr(self, 'entry_exit_points'):
-            # Find entry (typically on top or left border)
-            entry_candidates = []
-            if preserve_top:
-                entry_candidates.extend([(0, c) for c in preserve_top])
-            if preserve_left:
-                entry_candidates.extend([(r, 0) for r in preserve_left])
-            
-            # Find exit (typically on bottom or right border)
-            exit_candidates = []
-            if preserve_bottom:
-                exit_candidates.extend([(rows-1, c) for c in preserve_bottom])
-            if preserve_right:
-                exit_candidates.extend([(r, cols-1) for r in preserve_right])
-            
-            # Use closest to origin as entry, furthest from origin as exit
-            if entry_candidates:
-                entry_candidates.sort(key=lambda pos: pos[0] + pos[1])
-                entry = entry_candidates[0]
-            else:
-                entry = (0, 0)  # Default
-                
-            if exit_candidates:
-                exit_candidates.sort(key=lambda pos: pos[0] + pos[1], reverse=True)
-                exit_point = exit_candidates[0]
-            else:
-                exit_point = (rows-1, cols-1)  # Default
-                
-            self.entry_exit_points = (entry, exit_point)
+        # Store entry/exit candidates for later use
+        self.entry_exit_candidates = {
+            'top': preserve_top,
+            'right': preserve_right,
+            'bottom': preserve_bottom,
+            'left': preserve_left
+        }
         
         # Debug visualization of final walls
         if self.debug_mode:
@@ -688,69 +790,56 @@ class MazeImageProcessor:
         Args:
             rows: Number of rows in the maze
             cols: Number of columns in the maze
-            wall_indicators: 3D list [row][col][wall_direction] where wall_direction is:
-                            0: top, 1: right, 2: bottom, 3: left
-                            and 1 indicates a wall, 0 indicates no wall
+            wall_indicators: 3D list [row][col][wall_direction]
             
         Returns:
             Tuple of (entry_point, exit_point) where each is a tuple (row, col)
         """
-        # Find all border cells with openings
-        border_openings = []
-        
-        # Check top row
-        for c in range(cols):
-            if wall_indicators[0][c][0] == 0:  # No top wall
-                border_openings.append((0, c, "top"))
-        
-        # Check right column
-        for r in range(rows):
-            if wall_indicators[r][cols-1][1] == 0:  # No right wall
-                border_openings.append((r, cols-1, "right"))
-        
-        # Check bottom row
-        for c in range(cols):
-            if wall_indicators[rows-1][c][2] == 0:  # No bottom wall
-                border_openings.append((rows-1, c, "bottom"))
-        
-        # Check left column
-        for r in range(rows):
-            if wall_indicators[r][0][3] == 0:  # No left wall
-                border_openings.append((r, 0, "left"))
-        
-        # If we found no openings, the maze might be unusual or have errors
-        if not border_openings:
-            logging.warning("No border openings found, using corners as entry/exit")
-            return (0, 0), (rows-1, cols-1)
-        
-        # If we found exactly one opening, the maze might be unusual
-        if len(border_openings) == 1:
-            logging.warning(f"Found only one border opening, using opposite corner for exit")
-            entry_point = (border_openings[0][0], border_openings[0][1])
-            # For exit, use the opposite corner
-            exit_point = (rows-1 if entry_point[0] == 0 else 0, cols-1 if entry_point[1] == 0 else 0)
-            return entry_point, exit_point
-        
-        # If we found more than two openings, prioritize based on position
-        if len(border_openings) > 2:
-            logging.warning(f"Found {len(border_openings)} border openings, expected 2")
-            
-        # Calculate "distance" from corners to determine entry vs exit
-        # Usually entry is closer to top-left, exit closer to bottom-right
-        from_top_left = [(opening[0] + opening[1], opening) for opening in border_openings]
-        from_top_left.sort()  # Sort by distance from top-left
-        
-        # The one closest to the top-left is the entry
-        entry_opening = from_top_left[0][1]
-        
-        # The one furthest from the top-left is the exit (if we have at least 2 openings)
-        if len(from_top_left) > 1:
-            exit_opening = from_top_left[-1][1]
+        # Get stored entry/exit candidates if available
+        if hasattr(self, 'entry_exit_candidates'):
+            preserve_top = self.entry_exit_candidates.get('top', [])
+            preserve_right = self.entry_exit_candidates.get('right', [])
+            preserve_bottom = self.entry_exit_candidates.get('bottom', [])
+            preserve_left = self.entry_exit_candidates.get('left', [])
         else:
-            # Fallback if somehow we only have one opening at this point
-            exit_opening = entry_opening
+            # Find all border cells with openings (fallback if not already computed)
+            preserve_top = [c for c in range(cols) if wall_indicators[0][c][0] == 0]
+            preserve_right = [r for r in range(rows) if wall_indicators[r][cols-1][1] == 0]
+            preserve_bottom = [c for c in range(cols) if wall_indicators[rows-1][c][2] == 0]
+            preserve_left = [r for r in range(rows) if wall_indicators[r][0][3] == 0]
+        
+        # Collect all potential entry/exit points
+        entry_candidates = []
+        if preserve_top:
+            entry_candidates.extend([(0, c) for c in preserve_top])
+        if preserve_left:
+            entry_candidates.extend([(r, 0) for r in preserve_left])
             
-        # Optional: add debug visualization if self.debug_mode is True
+        exit_candidates = []
+        if preserve_bottom:
+            exit_candidates.extend([(rows-1, c) for c in preserve_bottom])
+        if preserve_right:
+            exit_candidates.extend([(r, cols-1) for r in preserve_right])
+        
+        # If we found no entry candidates, use corners or fallbacks
+        if not entry_candidates:
+            logging.warning("No entry candidates found, using top-left corner")
+            entry_point = (0, 0)
+        else:
+            # Sort by distance from origin (top-left corner)
+            entry_candidates.sort(key=lambda pos: pos[0] + pos[1])
+            entry_point = entry_candidates[0]
+        
+        # If we found no exit candidates, use opposite corner or fallbacks
+        if not exit_candidates:
+            logging.warning("No exit candidates found, using bottom-right corner")
+            exit_point = (rows-1, cols-1)
+        else:
+            # Sort by distance from bottom-right corner (furthest from origin)
+            exit_candidates.sort(key=lambda pos: (rows-1-pos[0]) + (cols-1-pos[1]))
+            exit_point = exit_candidates[0]
+        
+        # Debug visualization
         if self.debug_mode:
             debug_img = np.ones((rows * 50, cols * 50, 3), dtype=np.uint8) * 255
             
@@ -771,8 +860,8 @@ class MazeImageProcessor:
                                 cv2.line(debug_img, (cell_x, cell_y), (cell_x, cell_y + 50), (0, 0, 0), 2)
             
             # Highlight entry and exit
-            entry_x, entry_y = entry_opening[1] * 50 + 25, entry_opening[0] * 50 + 25
-            exit_x, exit_y = exit_opening[1] * 50 + 25, exit_opening[0] * 50 + 25
+            entry_x, entry_y = entry_point[1] * 50 + 25, entry_point[0] * 50 + 25
+            exit_x, exit_y = exit_point[1] * 50 + 25, exit_point[0] * 50 + 25
             cv2.circle(debug_img, (entry_x, entry_y), 15, (0, 255, 0), -1)
             cv2.circle(debug_img, (exit_x, exit_y), 15, (0, 0, 255), -1)
             cv2.putText(debug_img, "Entry", (entry_x - 20, entry_y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
@@ -781,7 +870,7 @@ class MazeImageProcessor:
             cv2.imwrite("debug/08_entry_exit_points.png", debug_img)
             
         # Return the positions (row, col)
-        return (entry_opening[0], entry_opening[1]), (exit_opening[0], exit_opening[1])
+        return entry_point, exit_point
     
     def _visualize_walls(self, wall_indicators, rows, cols):
         """
@@ -938,10 +1027,12 @@ class MazeImageProcessor:
             self.invert_binary = invert_binary
             self.wall_threshold = wall_threshold
             
-            graph, rows, cols = self.process_image(image_path)
+            graph, rows, cols, entry_point, exit_point = self.process_image(image_path)
             
             logging.info(f"Maze loaded successfully. Size: {rows}x{cols}")
-            return True, f"Maze loaded successfully. Size: {rows}x{cols}"
+            logging.info(f"Entry point: {entry_point}, Exit point: {exit_point}")
+            
+            return True, f"Maze loaded successfully. Size: {rows}x{cols}, Entry: {entry_point}, Exit: {exit_point}"
         except Exception as e:
             logging.error(f"Failed to process maze image: {str(e)}")
             import traceback

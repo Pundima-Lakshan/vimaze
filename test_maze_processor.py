@@ -28,7 +28,7 @@ def test_standard_processor(image_path, debug=True, invert_binary=False, wall_th
         print(f"Processing maze image with standard processor: {image_path}")
         print(f"Parameters: invert_binary={invert_binary}, wall_threshold={wall_threshold}, debug={debug}")
         
-        graph, rows, cols = processor.process_image(image_path)
+        graph, rows, cols, start, end = processor.process_image(image_path)
         print(f"Success! Maze dimensions: {rows}x{cols}")
         return True
     except Exception as e:
