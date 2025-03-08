@@ -1,14 +1,14 @@
 import logging
+from tkinter import filedialog
+from tkinter import messagebox
 
 import customtkinter as ctk
-import tkinter as tk
-from tkinter import filedialog, messagebox
 
 from vimaze.configs import solver_app_options
 from vimaze.maze import Maze
-from tkinter import messagebox
 
 logging.basicConfig(level=logging.DEBUG)
+
 
 class SolverApp:
     def __init__(self):
@@ -33,10 +33,9 @@ class SolverApp:
         self.costs_str = ctk.StringVar()
         self.maze_start_pos_str = ctk.StringVar()
         self.maze_end_pos_str = ctk.StringVar()
-        
+
         # Image processing variables
         self.image_path_str = ctk.StringVar()
-        self.processor_type_str = ctk.StringVar(value="Standard Processor")
         self.invert_binary_str = ctk.StringVar(value="false")
         self.wall_threshold_str = ctk.StringVar(value="127")
         self.cell_size_str = ctk.StringVar(value="20")
@@ -75,7 +74,7 @@ class SolverApp:
 
             if canvas_name == "maze_canvas":
                 self.maze_canvas = canvas
-        
+
         # self.maze_canvas.bind("<Motion>", doSomething)
         self.root.bind("<Configure>", self.on_resize)
 
@@ -180,7 +179,7 @@ class SolverApp:
         input_field.delete(0, 'end')  # Clear any existing text
         input_field.insert(0, config.get('default_value', ''))
         input_field.pack(pady=5, padx=10, fill="x")  # Fill horizontally with padding
-        
+
     def add_dropdown(self, parent, config):
         """Add a dropdown menu to the parent frame."""
         # Add a label for the dropdown
@@ -209,7 +208,7 @@ class SolverApp:
             self.select_maze_image()
         elif command == 'process_maze_image':
             self.process_maze_image()
-        
+
     def handle_slider_change(self, command, value):
         """Handle slider value changes."""
         logging.debug(f"Slider changed: {command} = {value}")
@@ -222,9 +221,7 @@ class SolverApp:
             self.set_maze_gen_algorithm(value)
         elif command == "set_maze_solving_algorithm":
             self.set_maze_solving_algorithm(value)
-        elif command == "set_processor_type":
-            self.processor_type_str.set(value)
-            
+
     def select_maze_image(self):
         """
         Open a file dialog to select a maze image.
@@ -234,12 +231,12 @@ class SolverApp:
             filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp *.gif")],
             parent=self.root  # Use the main window as parent
         )
-        
+
         # Update the path variable if a file was selected
         if file_path:
             self.image_path_str.set(file_path)
             logging.debug(f"Selected image: {file_path}")
-            
+
             # Also update the input field directly
             for tab in self.tabview.winfo_children():
                 if isinstance(tab, ctk.CTkFrame):
@@ -247,40 +244,35 @@ class SolverApp:
                         if isinstance(widget, ctk.CTkEntry) and widget.cget("textvariable") == self.image_path_str:
                             widget.delete(0, 'end')
                             widget.insert(0, file_path)
-    
+
     def process_maze_image(self):
         """
         Process the selected maze image and initialize the maze.
         """
         image_path = self.image_path_str.get()
-        
+
         if not image_path:
             messagebox.showerror("Error", "Please select an image file first.")
             return
-        
+
         try:
-            # Get processor type
-            processor_type = "simple" if self.processor_type_str.get() == "Simple Processor" else "standard"
-               
-            # Configure the maze image processor through the maze instance
             self.maze.init_from_image_with_params(
-                image_path, 
-                processor_type=processor_type,
+                image_path,
                 invert_binary=(self.invert_binary_str.get().lower() == "true"),
                 wall_threshold=int(self.wall_threshold_str.get()) if self.wall_threshold_str.get().isdigit() else 127,
                 cell_size=int(self.cell_size_str.get()) if self.cell_size_str.get().isdigit() else 20,
                 debug_mode=self.debug_mode.get()
             )
-            
+
             # Show success message
             messagebox.showinfo("Success", f"Maze loaded successfully. Size: {self.maze.rows}x{self.maze.cols}")
-            
+
         except Exception as e:
             # Display error message
             messagebox.showerror("Error", f"Failed to process maze image: {str(e)}")
             import traceback
             traceback.print_exc()  # Print the full traceback for debugging
-        
+
     def toggle_debug_mode(self):
         """
         Toggle debug mode for image processing.

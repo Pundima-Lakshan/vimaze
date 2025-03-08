@@ -114,20 +114,13 @@ solver_app_options = {
                         {
                             'type': 'button',
                             'text': 'Select Maze Image',
-                            'command': 'select_maze_image', 
+                            'command': 'select_maze_image',
                         },
                         {
                             'type': 'input',
                             'key': 'image_path',
                             'label': 'Image Path',
                             'default_value': '',
-                        },
-                        {
-                            'type': 'dropdown',
-                            'label': 'Processor Type',
-                            'values': ['Standard Processor', 'Simple Processor'],
-                            'default_value': 'Standard Processor',
-                            'command': 'set_processor_type'
                         },
                         {
                             'type': 'input',
@@ -295,4 +288,3 @@ maze_animator_options = {
         }
     }
 }
-

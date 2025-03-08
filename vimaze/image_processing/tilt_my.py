@@ -1,13 +1,13 @@
-import cv2 
-import numpy as np 
+import cv2
+import numpy as np
 
 image = cv2.imread('test6.jpg')
 
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-blurred = cv2.GaussianBlur(gray, (9,9), 0)
+blurred = cv2.GaussianBlur(gray, (9, 9), 0)
 edges = cv2.Canny(blurred, 50, 150)
-#_, binary_img = cv2.threshold(blurred, 128,255, cv2.THRESH_BINARY_INV)
+# _, binary_img = cv2.threshold(blurred, 128,255, cv2.THRESH_BINARY_INV)
 thresh = cv2.adaptiveThreshold(edges, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
 _, otsu = cv2.threshold(edges, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 combined = cv2.bitwise_or(thresh, otsu)
@@ -24,7 +24,7 @@ if contours:
     # epsilon = 0.02 * cv2.arcLength(largest_contour, True)
     # approx = cv2.approxPolyDP(largest_contour, epsilon, True)
     x, y, w, h = cv2.boundingRect(largest_contour)
-    #cropped_maze = image[y:y+h, x:x+w]
+    # cropped_maze = image[y:y+h, x:x+w]
     rect = cv2.minAreaRect(largest_contour)
     box = cv2.boxPoints(rect)
     box = box.astype(np.intp)
@@ -32,8 +32,8 @@ if contours:
 cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
 cv2.imshow('Detected Maze', image)
 cv2.waitKey(0)
-#x, y, w, h = cv2.boundingRect(largest_contour)
-#cropped_maze = image[y:y+h, x:x+w]
+# x, y, w, h = cv2.boundingRect(largest_contour)
+# cropped_maze = image[y:y+h, x:x+w]
 rect_points = np.array(box, dtype="float32")
 s = rect_points.sum(axis=1)
 diff = np.diff(rect_points, axis=1)
@@ -55,11 +55,10 @@ height_a = np.sqrt(((tr_x - br_x) ** 2) + ((tr_y - br_y) ** 2))
 height_b = np.sqrt(((tl_x - bl_x) ** 2) + ((tl_y - bl_y) ** 2))
 max_height = max(int(height_a), int(height_b))
 
-
-dst = np.array([[0, 0], 
-               [max_width , 0], 
-               [max_width , max_height ], 
-               [0, max_height ]], dtype="float32")
+dst = np.array([[0, 0],
+                [max_width, 0],
+                [max_width, max_height],
+                [0, max_height]], dtype="float32")
 
 dst2 = np.array([[0, max_height - 1],
                  [max_width - 1, max_height - 1],
@@ -80,7 +79,7 @@ tilted_maze = cv2.warpPerspective(image, M, (max_width, max_height))
 # else:
 #     angle = -angle
 
-#print("after fix: ", angle)
+# print("after fix: ", angle)
 
 # if angle < -45:
 #     angle = 90 + angle
@@ -89,21 +88,21 @@ tilted_maze = cv2.warpPerspective(image, M, (max_width, max_height))
 # else:
 #     angle = -angle
 
-#distrotion
+# distrotion
 # pts1 = np.float32(box)  # Detected bounding box points
 # pts2 = np.float32([[0, 0], [w, 0], [w, h], [0, h]])  # Desired destination points
 
 # M = cv2.getPerspectiveTransform(pts1, pts2)  # Compute transformation matrix
 # aligned_maze = cv2.warpPerspective(image, M, (w, h))
 
-#(h , w) = image.shape[:2]
-#center = (w // 2 , h // 2)
-#M = cv2.getRotationMatrix2D(center, angle, 1.0)
+# (h , w) = image.shape[:2]
+# center = (w // 2 , h // 2)
+# M = cv2.getRotationMatrix2D(center, angle, 1.0)
 
-#box_center = (rect[0][0], rect[0][1])  # Use the rectangle's center
-#M = cv2.getRotationMatrix2D(box_center, angle, 1.0)  # Rotate around the maze center
+# box_center = (rect[0][0], rect[0][1])  # Use the rectangle's center
+# M = cv2.getRotationMatrix2D(box_center, angle, 1.0)  # Rotate around the maze center
 
-#rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+# rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
 
 
 cv2.imshow('tilted Maze', tilted_maze)
@@ -111,15 +110,15 @@ cv2.waitKey(0)
 
 gray_tilted = cv2.cvtColor(tilted_maze, cv2.COLOR_BGR2GRAY)
 guassian_thresh = cv2.adaptiveThreshold(gray_tilted, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 21, 5)
-#cv2.imshow('guassian_thresh', guassian_thresh)
+# cv2.imshow('guassian_thresh', guassian_thresh)
 _, binary_tilted = cv2.threshold(guassian_thresh, 128, 255, cv2.THRESH_BINARY)
 
-grid = (binary_tilted/255).astype(int)
+grid = (binary_tilted / 255).astype(int)
 grid = grid[2:-2, 2:-2]
-filter_grid = grid[np.any(grid==0,axis=1)]
-filter_grid = filter_grid[:,np.any(filter_grid==0,axis=0)]  
+filter_grid = grid[np.any(grid == 0, axis=1)]
+filter_grid = filter_grid[:, np.any(filter_grid == 0, axis=0)]
 
-convert_filter_image = (filter_grid*255).astype(np.uint8)
+convert_filter_image = (filter_grid * 255).astype(np.uint8)
 cv2.imshow('final image', binary_tilted)
 cv2.waitKey(0)
 
@@ -133,7 +132,7 @@ enhance_edge = cv2.bitwise_or(binary_tilted, edges)
 cv2.imshow('enhance_edge', enhance_edge)
 cv2.waitKey(0)
 
-sharp_filter = np.array([[0,-1,0], [-1,5,-1], [0,-1,0]])
+sharp_filter = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
 sharp_image = cv2.filter2D(enhance_edge, -1, sharp_filter)
 cv2.imshow('sharp_image', sharp_image)
 cv2.waitKey(0)

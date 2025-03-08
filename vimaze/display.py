@@ -165,5 +165,3 @@ class MazeDisplay:
 
         self.draw_walls(x_u, y_u, [wall_remove_u], remove)
         self.draw_walls(x_v, y_v, [wall_remove_v], remove)
-        
-        

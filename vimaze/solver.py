@@ -54,5 +54,3 @@ class MazeSolver:
             self.solved_path = list(map(lambda path_name: self.graph.nodes[path_name], path_names_array))
 
         self.solved_path.reverse()
-
-
