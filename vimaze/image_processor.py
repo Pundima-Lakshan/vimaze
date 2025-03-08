@@ -1,7 +1,7 @@
 import logging
 import os
 from collections import Counter
-from typing import TYPE_CHECKING, Tuple, Optional
+from typing import TYPE_CHECKING, Optional
 
 import cv2
 import numpy as np
@@ -34,11 +34,10 @@ class MazeImageProcessor:
         self.wall_detection_threshold_h = 0.4  # Threshold for horizontal wall detection
         self.wall_detection_threshold_v = 0.4  # Threshold for vertical wall detection
 
-    def process_image(self, image_path: str) -> Tuple['Graph', int, int, tuple[int, int], tuple[int, int]]:
+    def process_image(self, image_path: str) -> tuple['Graph', int, int, tuple[int, int], tuple[int, int]]:
         """
-        Process a maze image and return a Graph representation along with dimensions.
+        Main Function: Process a maze image and return a Graph representation along with dimensions.
         """
-
         if self.timer:
             self.timer.start('processing', 'image')
 
@@ -81,7 +80,9 @@ class MazeImageProcessor:
         # Step 4: Detect grid parameters (cell size and alignment)
         path_width, wall_width = self._find_min_spacing(maze_binary)
         cell_size = path_width + wall_width
-        rows, cols = self._calculate_grid_dimensions(maze_binary, path_width, wall_width)
+
+        # Calculate grid dimensions with offsets for better alignment
+        rows, cols, offset_y, offset_x = self._calculate_grid_dimensions(maze_binary, path_width, wall_width)
 
         logging.debug(
             f"Detected grid: path_width={path_width}, wall_width={wall_width}, cell_size={cell_size}, dimensions={rows}x{cols}")
@@ -90,20 +91,20 @@ class MazeImageProcessor:
             maze_debug = np.array(maze_binary, dtype=np.uint8) * 255
             grid_viz = cv2.cvtColor(maze_debug, cv2.COLOR_GRAY2BGR)
 
-            # Draw detected grid
+            # Draw detected grid with offsets
             for r in range(rows + 1):
-                y = r * cell_size
+                y = r * cell_size + offset_y
                 if y < grid_viz.shape[0]:
                     cv2.line(grid_viz, (0, y), (grid_viz.shape[1], y), (0, 255, 0), 1)
 
             for c in range(cols + 1):
-                x = c * cell_size
+                x = c * cell_size + offset_x
                 if x < grid_viz.shape[1]:
                     cv2.line(grid_viz, (x, 0), (x, grid_viz.shape[0]), (0, 255, 0), 1)
 
             cv2.imwrite("debug/04_grid_detection.png", grid_viz)
 
-        # Step 5: Detect walls using area-based approach
+        # Step 5: Detect walls using area-based approach with improved edge handling
         wall_indicators = self._detect_walls_cell_based(maze_binary, rows, cols, cell_size)
 
         # Step 6: Create graph representation from wall indicators
@@ -376,42 +377,73 @@ class MazeImageProcessor:
 
         return path_width, wall_width
 
-    def _calculate_grid_dimensions(self, maze_matrix, transition, wall):
+    def _calculate_grid_dimensions(self, maze_matrix, path_width, wall_width):
         """
-        Calculate grid dimensions based on cell size.
+        Calculate grid dimensions based on cell size with improved edge cell handling.
         
         Args:
             maze_matrix: Binary maze matrix
-            transition: Width of path
-            wall: Width of wall
+            path_width: Width of path
+            wall_width: Width of wall
             
         Returns:
-            Tuple of (rows, cols)
+            Tuple of (rows, cols, offset_y, offset_x)
         """
         # In NumPy arrays, shape[0] is height (rows) and shape[1] is width (columns)
         height, width = maze_matrix.shape
-        cell_size = transition + wall
+        cell_size = path_width + wall_width
 
-        # Calculate number of rows and columns
-        rows = height // cell_size
-        cols = width // cell_size
+        # Calculate number of rows and columns (initial estimate)
+        rows_raw = height / cell_size
+        cols_raw = width / cell_size
+
+        # Get integer part
+        rows_int = int(rows_raw)
+        cols_int = int(cols_raw)
+
+        # Calculate the fractional parts (representing partial cells)
+        rows_frac = rows_raw - rows_int
+        cols_frac = cols_raw - cols_int
+
+        # Determine if we should include the partial row/column
+        # Based on threshold (e.g., if more than 50% of cell is present)
+        include_partial_row = rows_frac > 0.5
+        include_partial_col = cols_frac > 0.5
+
+        # Calculate final dimensions
+        rows = rows_int + (1 if include_partial_row else 0)
+        cols = cols_int + (1 if include_partial_col else 0)
+
+        # Calculate offsets (to center the grid better)
+        offset_y = 0
+        offset_x = 0
+
+        # If we're not including a partial row/column but there's some fraction,
+        # we can distribute the excess as an offset to center the grid
+        if not include_partial_row and rows_frac > 0:
+            offset_y = int(rows_frac * cell_size / 2)
+        if not include_partial_col and cols_frac > 0:
+            offset_x = int(cols_frac * cell_size / 2)
 
         # Log dimensions for debugging
         if self.debug_mode:
             logging.debug(f"Maze matrix shape: {maze_matrix.shape}")
             logging.debug(f"Cell size: {cell_size}")
-            logging.debug(f"Calculated grid dimensions: {rows}x{cols}")
+            logging.debug(f"Raw dimensions: {rows_raw}x{cols_raw}")
+            logging.debug(f"Fractional parts: {rows_frac}x{cols_frac}")
+            logging.debug(f"Include partial row/col: {include_partial_row}, {include_partial_col}")
+            logging.debug(f"Calculated grid dimensions: {rows}x{cols} with offsets {offset_y},{offset_x}")
 
         # Ensure we have at least one row and column
         rows = max(1, rows)
         cols = max(1, cols)
 
-        return rows, cols
+        return rows, cols, offset_y, offset_x
 
     def _detect_walls_cell_based(self, maze_binary, rows, cols, cell_size):
         """
         Detect walls by analyzing entire cells for wall segments and determining
-        which edges the walls are closest to.
+        which edges the walls are closest to, with improved handling for edge cells.
         
         Args:
             maze_binary: Binary maze image (0=wall, 1=path)
@@ -425,6 +457,16 @@ class MazeImageProcessor:
         height, width = maze_binary.shape
         wall_indicators = [[[0, 0, 0, 0] for _ in range(cols)] for _ in range(rows)]
 
+        # Compute offsets to better align the grid
+        rows_raw = height / cell_size
+        cols_raw = width / cell_size
+        rows_frac = rows_raw - int(rows_raw)
+        cols_frac = cols_raw - int(cols_raw)
+
+        # Calculate offsets to center the grid
+        offset_y = int((height - rows * cell_size) / 2) if height > rows * cell_size else 0
+        offset_x = int((width - cols * cell_size) / 2) if width > cols * cell_size else 0
+
         # Debug visualizations
         if self.debug_mode:
             debug_img = np.zeros((height, width, 3), dtype=np.uint8)
@@ -436,15 +478,55 @@ class MazeImageProcessor:
         # First pass: analyze cells and detect walls
         for r in range(rows):
             for c in range(cols):
-                # Calculate cell boundaries
-                top = r * cell_size
-                left = c * cell_size
-                bottom = min((r + 1) * cell_size, height)
-                right = min((c + 1) * cell_size, width)
+                # Calculate cell boundaries with offset
+                top = min(r * cell_size + offset_y, height - 1)
+                left = min(c * cell_size + offset_x, width - 1)
+                bottom = min((r + 1) * cell_size + offset_y, height)
+                right = min((c + 1) * cell_size + offset_x, width)
 
                 # Skip if out of bounds
                 if top >= height or left >= width:
                     continue
+
+                # Check if this is a partial cell at the edge of the image
+                is_partial_cell = (right - left < cell_size) or (bottom - top < cell_size)
+
+                # For partial cells, check if they have enough content to be included
+                if is_partial_cell:
+                    # Calculate how much of the cell is actually present
+                    cell_area = (right - left) * (bottom - top)
+                    full_cell_area = cell_size * cell_size
+                    cell_coverage = cell_area / full_cell_area
+
+                    # Extract partial cell
+                    partial_cell = maze_binary[top:bottom, left:right]
+
+                    # Count wall and path pixels
+                    wall_pixels = np.sum(partial_cell == 0)
+                    path_pixels = np.sum(partial_cell == 1)
+                    total_pixels = wall_pixels + path_pixels
+
+                    # If the cell has very few path pixels relative to walls, it might be mostly border
+                    path_ratio = path_pixels / total_pixels if total_pixels > 0 else 0
+
+                    # Criteria for including a partial cell:
+                    # 1. At least 50% of the cell is present AND
+                    # 2. There is a reasonable amount of path pixels (>20% of visible area)
+                    include_cell = cell_coverage > 0.5 and path_ratio > 0.2
+
+                    if not include_cell:
+                        # Mark all walls for this cell and skip detailed analysis
+                        wall_indicators[r][c] = [1, 1, 1, 1]  # All walls present
+                        continue
+
+                    if self.debug_mode:
+                        # Visualize partial cells differently
+                        color = (200, 100, 255)  # Purple for partial cells
+                        cv2.rectangle(debug_img, (left, top), (right, bottom), color, 1)
+                        cv2.putText(debug_img, f"C:{cell_coverage:.2f}", (left + 2, top + 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
+                        cv2.putText(debug_img, f"P:{path_ratio:.2f}", (left + 2, top + 20),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 1)
 
                 # Extract cell
                 cell = maze_binary[top:bottom, left:right]
@@ -457,11 +539,12 @@ class MazeImageProcessor:
                 h_wall_positions = []
                 for y in range(cell.shape[0]):
                     # Count wall pixels in this row
-                    wall_pixels = np.sum(cell[y, :] == 0)
+                    if y < cell.shape[0]:  # Safety check
+                        wall_pixels = np.sum(cell[y, :] == 0)
 
-                    # If row is mostly wall pixels (e.g., 70%)
-                    if wall_pixels > cell.shape[1] * 0.7:
-                        h_wall_positions.append(y)
+                        # If row is mostly wall pixels (e.g., 70%)
+                        if wall_pixels > cell.shape[1] * 0.7:
+                            h_wall_positions.append(y)
 
                 # Group adjacent positions (within a few pixels) to handle thick walls
                 h_walls = []
@@ -493,11 +576,12 @@ class MazeImageProcessor:
                 v_wall_positions = []
                 for x in range(cell.shape[1]):
                     # Count wall pixels in this column
-                    wall_pixels = np.sum(cell[:, x] == 0)
+                    if x < cell.shape[1]:  # Safety check
+                        wall_pixels = np.sum(cell[:, x] == 0)
 
-                    # If column is mostly wall pixels
-                    if wall_pixels > cell.shape[0] * 0.7:
-                        v_wall_positions.append(x)
+                        # If column is mostly wall pixels
+                        if wall_pixels > cell.shape[0] * 0.7:
+                            v_wall_positions.append(x)
 
                 # Group adjacent positions to handle thick walls
                 v_walls = []
