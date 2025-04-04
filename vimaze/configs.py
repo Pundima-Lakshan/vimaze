@@ -123,6 +123,11 @@ solver_app_options = {
                             'default_value': '',
                         },
                         {
+                            'type': 'button',
+                            'text': 'Select Maze Corners Manually',
+                            'command': 'select_maze_corners',
+                        },
+                        {
                             'type': 'input',
                             'key': 'invert_binary',
                             'label': 'Invert Binary (true/false)',
@@ -133,12 +138,6 @@ solver_app_options = {
                             'key': 'wall_threshold',
                             'label': 'Wall Threshold (0-255)',
                             'default_value': '127',
-                        },
-                        {
-                            'type': 'input',
-                            'key': 'cell_size',
-                            'label': 'Cell Size (Simple Processor)',
-                            'default_value': '20',
                         },
                         {
                             'type': 'button',

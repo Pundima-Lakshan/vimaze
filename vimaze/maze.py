@@ -45,8 +45,13 @@ class Maze:
         self.cols = cols
         self.graph = self.generator.generate_maze_graph(rows, cols, self.gen_algorithm)
 
+    def manual_corner_input(self, image_path: str):
+        processor = MazeImageProcessor(self.timer)
+
+        return processor.manual_corner_input(image_path)
+
     def init_from_image_with_params(self, image_path: str, invert_binary: bool = False, wall_threshold: int = 127,
-                                    debug_mode: bool = False, cell_size: int = 20):
+                                    debug_mode: bool = False):
         """
         Initialize maze from an image with custom parameters.
         
@@ -55,7 +60,6 @@ class Maze:
             invert_binary: Whether to invert the binary image
             wall_threshold: Threshold for wall detection (0-255)
             debug_mode: Whether to save debug visualizations
-            cell_size: Size of cells (for simple processor)
         """
         # Log the parameters
         logging.debug(f"Processing image: {image_path}")
